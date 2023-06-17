@@ -1,7 +1,10 @@
 import torch
+from toolbox.plotting import show_images
 from toolbox.utils import *
+import torchvision
 import pandas as pd
 import numpy as np
+from torchvision import transforms
 
 class DataModule(HyperParameters):
     """The abstract class of data"""
@@ -13,26 +16,7 @@ class DataModule(HyperParameters):
 
     def val_dataloader(self):
         return self.get_dataloader(train=False)
-
-    def get_tensorloader(self, tensors, train, indices=slice(0, None)):
-        tensors = tuple(a[indices] for a in tensors)
-        dataset = torch.utils.data.TensorDataset(*tensors)
-        return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
-
     
-class SyntheticRegressionData(DataModule): 
-    """Synthetic data generator for linear regression."""
-    def __init__(self, w, b, noise=0.01, num_train=1000, num_val=1000, batch_size=32):
-        super().__init__()
-        self.save_hyperparameters(ignore=[w,b]) #saving already initialized values among parameters
-        n = num_train + num_val #number of dataset samples
-        self.X = torch.randn(n, len(w)) #design matrix X (of features)
-        #b = torch.zeros(n, 1) #vector of bias values
-        #self.X = torch.cat((b,self.X), dim = 1) #"augmented" design matrix with biases as first column
-        noise = torch.randn(n, 1) * noise
-        #self.w = torch.cat((torch.zeros((1,1)),self.w.reshape((-1, 1))),dim = 0)
-        self.y = torch.matmul(self.X, self.w.reshape((-1, 1))) + b + noise #vector of labels
-        
     def get_dataloader(self, train):
         """Yields a minibatch of data at each next(iter(dataloader))"""
         # if train:
@@ -48,31 +32,43 @@ class SyntheticRegressionData(DataModule):
         #     yield self.X[batch_indices], self.y[batch_indices]
         i = slice(0, self.num_train) if train else slice(self.num_train, None)
         return self.get_tensorloader((self.X, self.y), train, i)
+
+    def get_tensorloader(self, tensors, train, indices=slice(0, None)):
+        tensors = tuple(a[indices] for a in tensors)
+        dataset = torch.utils.data.TensorDataset(*tensors)
+        return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
+
+    
+class SyntheticRegressionData(DataModule): 
+    """Synthetic data generator for linear regression."""
+    def __init__(self, w, b, noise=0.01, num_train=1000, num_val=1000, batch_size=32):
+        super().__init__()
+        self.save_hyperparameters() #saving already initialized values among parameters
+        n = num_train + num_val #number of dataset samples
+        self.X = torch.randn(n, len(w)) #design matrix X (of features)
+        noise = torch.randn(n, 1) * noise
+        self.y = torch.matmul(self.X, self.w.reshape((-1, 1))) + b + noise #vector of labels
+        
     
 class DataLoader(DataModule):
     
-    def __init__(self, url, features, num_train, num_val, batch_size, class2Int = True):
-        super().__init__()
-        self.save_hyperparameters(ignore=[url]) #saving already initialized values among constructor parameters
-        
-        #Dataframe creation
-        dataframe = pd.read_csv(url, names = features) #get datafrae from csv file
-        self.dataframe = dataframe
-        self.dataframe = dataframe
-        self.initXy(dataframe)
-        
-    def __init__(self, path, num_train, num_val, batch_size, class2Int = True):
+    def __init__(self, path, num_train, num_val, batch_size, features = None, class2Int = True):
         super().__init__()
         self.save_hyperparameters(ignore=[path]) #saving already initialized values among constructor parameters
         
         #Dataframe creation
-        dataframe = pd.read_csv(path) #get datafrae from csv file
+        if features is not None:
+            dataframe = pd.read_csv(path, names = features) #get datafrae from csv file
+        else:
+             dataframe = pd.read_csv(path) 
         self.dataframe = dataframe
         self.initXy(dataframe)
     
     def __init__(self,txtfile):
         super().__init__()
-        X, y = self.load_data(txtfile)
+        data = np.loadtxt(txtfile, delimiter=',')
+        X = data[:,:-1]
+        y = data[:,-1]
         self.X = torch.tensor(X).type(torch.float32)
         self.y = torch.tensor(y).type(torch.float32)
         self.num_train = len(y)
@@ -83,8 +79,7 @@ class DataLoader(DataModule):
         inputs, targets = dataframe.iloc[:, :-1], dataframe.iloc[:, -1]    
         #Features tensor
         self.X = torch.tensor(inputs.values).type(torch.float32)
-        # self.b = torch.zeros(self.X.size(0), 1) #vector of bias values
-        # self.X = torch.cat((b,X), dim = 1).type(torch.float32) #"augmented" design matrix with biases as first column
+        self.b = torch.zeros(self.X.size(0), 1) #vector of bias values
         
         #Label tensor
         y = np.array(targets.values)
@@ -97,13 +92,6 @@ class DataLoader(DataModule):
             y = torch.tensor(y)
         self.y = y
 
-            
-    def load_data(self, filename):      
-        data = np.loadtxt(filename, delimiter=',')
-        X = data[:,:-1]
-        y = data[:,-1]
-        return X, y
-    
     def summarize(self):
         # gather details
         n_rows = self.X.shape[0]
@@ -127,6 +115,36 @@ class DataLoader(DataModule):
         """Yields a minibatch of data"""
         i = slice(0, self.num_train) if train else slice(self.num_train, None)
         return self.get_tensorloader((self.X, self.y), train, i)
+    
+
+class FashionMNIST(DataModule):
+    """The Fashion-MNIST dataset"""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.train = torchvision.datasets.FashionMNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.val = torchvision.datasets.FashionMNIST(
+            root=self.root, train=False, transform=trans, download=True)
+
+    def text_labels(self, indices):
+        """Return text labels"""
+        labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
+                  'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+        return [labels[int(i)] for i in indices]
+
+    def get_dataloader(self, train):
+        data = self.train if train else self.val
+        return torch.utils.data.DataLoader(data, self.batch_size, shuffle=train, num_workers=self.num_workers)
+        
+    def visualize(self, batch, nrows=1, ncols=8, labels=[]):
+        X, y = batch
+        if not labels:
+            labels = self.text_labels(y)
+        show_images(X.squeeze(1), nrows, ncols, titles=labels)
+
+
         
 
 

@@ -26,3 +26,5 @@ class SGD(HyperParameters):
         for param in self.params:
             if param.grad is not None:
                 param.grad.zero_()
+
+

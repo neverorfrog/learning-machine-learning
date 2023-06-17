@@ -4,7 +4,7 @@ from toolbox.plotting import ProgressBoard
 
 class Trainer(HyperParameters):
     """The base class for training models with data"""
-    def __init__(self, max_epochs, plot_train_per_epoch = 1, plot_valid_per_epoch = 1):
+    def __init__(self, max_epochs, plot_train_per_epoch = 5, plot_valid_per_epoch = 1):
         self.save_hyperparameters()
         self.board = ProgressBoard()
 
@@ -38,25 +38,23 @@ class Trainer(HyperParameters):
         self.model.train()
         l = 0 
         for batch in self.train_dataloader:
-            l = self.model.training_step(batch)
+            l = self.model.get_loss(batch)
             # print(f"Loss at epoch {self.epoch + 1},batch {self.train_batch_idx % self.num_train_batches + 1}: {l}\n")
-            # self.plot('loss', loss, self.model.device, train=True)
             self.optim.zero_grad()
             with torch.no_grad():
                 l.backward()
                 self.optim.step()
             self.train_batch_idx += 1
-        print(f"Loss at epoch {self.epoch + 1}: {l}\n")
+        # print(f"Loss at epoch {self.epoch + 1}: {l}\n")
         
         # entering into evaluation mode
-        # if self.val_dataloader is None:
-        #     return
-        # self.model.eval()
-        # for batch in self.val_dataloader:
-        #     with torch.no_grad():
-        #         loss = self.model.validation_loss(batch)
-        #         self.plot('loss', loss, self.model.device, train=False)
-        #     self.val_batch_idx += 1
+        if self.val_dataloader is None:
+            return
+        self.model.eval()
+        for batch in self.val_dataloader:
+            with torch.no_grad():
+                self.model.validation_step(batch)
+            self.val_batch_idx += 1
     
     def plot(self, key, value, device, train):
         """Plot a point in animation."""

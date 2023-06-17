@@ -3,8 +3,6 @@ import collections
 from IPython import display
 from matplotlib_inline import backend_inline
 from toolbox.utils import HyperParameters
-import numpy as np
-from toolbox.lab_utils_common import sigmoid, dlblue, dlorange, np, plt, compute_cost_matrix
 
 class ProgressBoard(HyperParameters):
     """The board that plots data points in animation."""
@@ -84,32 +82,20 @@ def setAxes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
         axes.legend(legend)
     axes.grid()
     
-def plotTwoLogLosses():
-    """ plots the logistic loss """
-    fig,ax = plt.subplots(1,2,figsize=(6,3),sharey=True)
-    fig.canvas.toolbar_visible = False
-    fig.canvas.header_visible = False
-    fig.canvas.footer_visible = False
-    x = np.linspace(0.01,1-0.01,200)
-    ax[0].plot(x,-np.log(x))
-    ax[0].set_title("y = 1")
-    ax[0].set_ylabel("loss")
-    ax[0].set_xlabel(r"$h_{w}(x)$")
-    ax[1].plot(x,-np.log(1-x))
-    ax[1].set_title("y = 0")
-    ax[1].set_xlabel(r"$h_{w}(x)$")
-    ax[0].annotate("prediction \nmatches \ntarget ", xy= [1,0], xycoords='data',
-                 xytext=[-10,30],textcoords='offset points', ha="right", va="center",
-                   arrowprops={'arrowstyle': '->', 'color': dlorange, 'lw': 3},)
-    ax[0].annotate("loss increases as prediction\n differs from target", xy= [0.1,-np.log(0.1)], xycoords='data',
-                 xytext=[10,30],textcoords='offset points', ha="left", va="center",
-                   arrowprops={'arrowstyle': '->', 'color': dlorange, 'lw': 3},)
-    ax[1].annotate("prediction \nmatches \ntarget ", xy= [0,0], xycoords='data',
-                 xytext=[10,30],textcoords='offset points', ha="left", va="center",
-                   arrowprops={'arrowstyle': '->', 'color': dlorange, 'lw': 3},)
-    ax[1].annotate("loss increases as prediction\n differs from target", xy= [0.9,-np.log(1-0.9)], xycoords='data',
-                 xytext=[-10,30],textcoords='offset points', ha="right", va="center",
-                   arrowprops={'arrowstyle': '->', 'color': dlorange, 'lw': 3},)
-    plt.suptitle("Loss Curves for Two Categorical Target Values", fontsize=12)
-    plt.tight_layout()
-    plt.show()
+def show_images(imgs, num_rows, num_cols, titles = None, scale=1.5):
+    """Plot a list of images."""
+    figsize = (num_cols * scale, num_rows * scale)
+    _, axes = plt.subplots(num_rows, num_cols, figsize=figsize)
+    axes = axes.flatten()
+    for i, (ax, img) in enumerate(zip(axes, imgs)):
+        try:
+            img = img.detach().numpy()
+        except:
+            pass
+        ax.imshow(img)
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
+        if titles:
+            ax.set_title(titles[i])
+    return axes
+    
