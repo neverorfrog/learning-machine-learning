@@ -18,4 +18,6 @@ def cross_entropy(Y_hat, Y):
     - Y_hat (n, m): predictions of the model. -> m is the number of classes
     Returns the average cross-entropy.
     """
+    # This is called integer array indexing:
+    # https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
     return -torch.log(Y_hat[list(range(len(Y_hat))), Y]).mean()

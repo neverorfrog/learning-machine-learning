@@ -42,7 +42,7 @@ class Trainer(HyperParameters):
             # print(f"Loss at epoch {self.epoch + 1},batch {self.train_batch_idx % self.num_train_batches + 1}: {l}\n")
             self.optim.zero_grad()
             with torch.no_grad():
-                l.backward()
+                l.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
                 self.optim.step()
             self.train_batch_idx += 1
         # print(f"Loss at epoch {self.epoch + 1}: {l}\n")
@@ -66,25 +66,3 @@ class Trainer(HyperParameters):
             x = self.epoch + 1
             n = self.num_val_batches / self.plot_valid_per_epoch
         self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n=int(n))
-            
-            
-class TrainerScratch(Trainer):
-    """The base class for training models with data"""
-    def __init__(self, max_epochs):
-        Trainer.__init__(self, max_epochs)
-
-    # That is the effective training cycle in which the epochs pass by
-    def fit(self, model, data):
-        self.prepare_data(data)
-        self.prepare_model(model)
-        self.epoch = 0
-        self.train_batch_idx = 0
-        self.val_batch_idx = 0
-        for self.epoch in range(self.max_epochs):
-            l = 0
-            for batch in self.train_dataloader:
-                l = self.model.training_step(batch)
-                # print(f"Loss at epoch {self.epoch + 1},batch {self.train_batch_idx % self.num_train_batches + 1}: {l}\n")
-                # self.plot('loss', l, self.model.device, train=True)
-                self.train_batch_idx += 1
-            print(f"Loss at epoch {self.epoch + 1}: {l}\n")
