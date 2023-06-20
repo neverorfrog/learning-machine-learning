@@ -26,14 +26,38 @@ class Module(nn.Module, HyperParameters):
             self.net.apply(init)
             
     def training_step(self, batch):
-        #in the first argument of self.loss we call forward, passing it the unpacked batch of features
-        l = self.loss(self(*batch[:-1]), batch[-1])
-        self.trainer.plot('loss', l, self.device, train=True)
-        return l
+        X = torch.tensor(*batch[:-1]) #features
+        y_hat = self(X) #extraction of X and forward propagation
+        y = batch[-1] #labels
+        loss = self.loss(y_hat, y)
+        self.trainer.plot('loss', loss, self.device, train = True)
+        return loss
 
     def validation_step(self, batch):
-        l = self.loss(self(*batch[:-1]), batch[-1])
-        self.plot('loss', l, self.device, train=False)
+        with torch.no_grad():
+            loss = self.loss(self(*batch[:-1]), batch[-1])
+        self.trainer.plot('loss', loss, self.device, train = False)
+        
+
+class Classifier(Module):
+    """The base class of classification models"""
+    def __init__(self):
+        super().__init__()
+         
+    def validation_step(self, batch):
+        with torch.no_grad():
+            Y_hat = self(*batch[:-1])
+            self.trainer.plot('loss', self.loss(Y_hat, batch[-1]), self.device, train=False)
+            self.trainer.plot('acc', self.accuracy(Y_hat, batch[-1]), self.device, train=False)
+
+    def accuracy(self, Y_hat, Y, averaged=True):
+        """Compute the number of correct predictions"""
+        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]) # each row is a prediction for sample of belonging to each class
+        predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
+        compare = (predictions == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
+        return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
+
+        
     
 class LinearRegressionScratch(Module): 
     """The linear regression model implemented from scratch."""
@@ -52,13 +76,15 @@ class LinearRegressionScratch(Module):
         l = torch.pow(y_hat - y, 2) / 2
         return (1 / self.trainer.batch_size) * l.sum()
     
-    def get_loss(self, batch):
-        y_hat = self(*batch[:-1]) #prediction (calling forward)
+    def training_step(self, batch) -> None:
+        #Forward Propagation
+        X = torch.tensor(*batch[:-1]) #features
+        y_hat = self(X) #extraction of X and forward propagation
         y = batch[-1] #labels
-        self.optim_step(y_hat, y, *batch[:-1])
-        return self.loss(y_hat,y)
-    
-    def optim_step(self, y_hat, y, X) -> None:
+        loss = self.loss(y_hat, y)
+        self.trainer.plot('loss', loss, self.device, train = True)
+        
+        #Backward Propagation
         error = (y_hat - y)
         n = len(self.w)
         m = self.trainer.batch_size
@@ -71,9 +97,6 @@ class LinearRegressionScratch(Module):
         
         self.w = self.w - self.lr * dj_dw
         self.b = self.b - self.lr * dj_db
-    
-    def configure_optimizers(self):
-        return SGD([self.w, self.b], self.lr)
     
     def get_w_b(self):
         return (self.w, self.b)
@@ -101,26 +124,6 @@ class LinearRegression(Module):
 
     def get_w_b(self):
         return (self.net.weight.data, self.net.bias.data)
-    
-    
-class Classifier(Module):
-    """The base class of classification models"""
-    def validation_step(self, batch):
-        Y_hat = self(*batch[:-1])
-        self.trainer.plot('loss', self.loss(Y_hat, batch[-1]), self.device, train=False)
-        self.trainer.plot('acc', self.accuracy(Y_hat, batch[-1]), self.device, train=False)
-
-    def accuracy(self, Y_hat, Y, averaged=True):
-        """Compute the number of correct predictions"""
-        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]) # each row is a prediction for sample of belonging to each class
-        predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
-        compare = (predictions == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
-        return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
-
-    def loss(self, Y_hat, Y, averaged=True):
-        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1])
-        Y = Y.reshape(-1,)
-        return F.cross_entropy(Y_hat, Y, reduction='mean' if averaged else 'none')
     
     
 class SoftmaxRegressionScratch(Classifier):
@@ -156,6 +159,11 @@ class SoftmaxRegression(Classifier):
 
     def forward(self, X):
         return self.net(X)
+    
+    def loss(self, Y_hat, Y, averaged=True):
+        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1])
+        Y = Y.reshape(-1,)
+        return F.cross_entropy(Y_hat, Y, reduction='mean' if averaged else 'none')
         
     
 class LogisticRegressionScratch(Classifier): 
@@ -166,7 +174,6 @@ class LogisticRegressionScratch(Classifier):
         torch.manual_seed(1)
         self.w = 0.01 * (torch.rand(input_dim, requires_grad= True).reshape(-1,1) - 0.5)
         self.b = torch.ones(1, requires_grad= True) * (-8)
-        # self.w = torch.ones((input_dim, 1), requires_grad= True) * 0.01 * (torch.rand(2).reshape(-1,1) - 0.5)
         
     #That's basically all our model amounts to when computing a label
     def forward(self, X):
@@ -184,19 +191,14 @@ class LogisticRegressionScratch(Classifier):
         return torch.sum(l_one + l_zero) / self.trainer.batch_size
     
     def training_step(self, batch):
-        y_hat = self(*batch[:-1]) #prediction (calling forward)
+        #Forward Propagation
+        X = torch.tensor(*batch[:-1]) #features
+        y_hat = self(X) #extraction of X and forward propagation
         y = batch[-1] #labels
-        self.optim_step(y_hat, y, *batch[:-1])
-        loss = self.loss(y_hat,y)
-        self.trainer.plot('loss', loss, self.device, train=True)
-        return loss
-    
-    def validation_step(self, batch):
-        Y_hat = self(*batch[:-1])
-        self.trainer.plot('loss', self.loss(Y_hat, batch[-1]), self.device, train=False)
-        self.trainer.plot('acc', self.accuracy(Y_hat, batch[-1]), self.device, train=False)
-    
-    def optim_step(self, y_hat, y, X):
+        loss = self.loss(y_hat, y)
+        self.trainer.plot('loss', loss, self.device, train = True)
+        
+        #Backward Propagation
         error = (y_hat - y)
         n = len(self.w)
         m = self.trainer.batch_size
@@ -206,9 +208,14 @@ class LogisticRegressionScratch(Classifier):
         
         self.w = self.w - self.lr * dj_dw
         self.b = self.b - self.lr * dj_db
+
+    def validation_step(self, batch):
+        Y_hat = self(*batch[:-1])
+        self.trainer.plot('loss', self.loss(Y_hat, batch[-1]), self.device, train=False)
+        self.trainer.plot('acc', self.accuracy(Y_hat, batch[-1]), self.device, train=False)
     
     def configure_optimizers(self):
-        return SGD([self.w, self.b], self.lr)
+        return None
     
     
 class LogisticRegression(Classifier): 

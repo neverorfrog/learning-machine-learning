@@ -24,37 +24,52 @@ class Trainer(HyperParameters):
     def fit(self, model, data):
         self.prepare_data(data)
         self.prepare_model(model)
-        self.optim = model.configure_optimizers()
+        self.optim = self.model.configure_optimizers()
         self.epoch = 0
         self.train_batch_idx = 0
         self.val_batch_idx = 0
-        for self.epoch in range(self.max_epochs):
-            self.fit_epoch()
-    
-    # That is the cycle in each epoch where iterations (as many as minibatches) pass by
-    def fit_epoch(self):
-        
-        #entering into training mode
-        self.model.train()
-        l = 0 
-        for batch in self.train_dataloader:
-            l = self.model.training_step(batch)
-            # print(f"Loss at epoch {self.epoch + 1},batch {self.train_batch_idx % self.num_train_batches + 1}: {l}\n")
-            # self.optim.zero_grad()
-            # with torch.no_grad():
-            #     l.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
-            #     self.optim.step()
-            self.train_batch_idx += 1
-        # print(f"Loss at epoch {self.epoch + 1}: {l}\n")
-        
-        # entering into evaluation mode
-        if self.val_dataloader is None:
-            return
-        self.model.eval()
-        for batch in self.val_dataloader:
-            with torch.no_grad():
+        for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
+            #entering into training mode
+            self.model.train() 
+            for batch in self.train_dataloader:
+                
+                #Forward propagation
+                loss = self.model.training_step(batch)
+
+                #Backward Propagation
+                self.optim.zero_grad()
+                with torch.no_grad():
+                    loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
+                    self.optim.step() 
+                self.train_batch_idx += 1
+            
+            # entering into evaluation mode
+            if self.val_dataloader is None:
+                return
+            self.model.eval()
+            for batch in self.val_dataloader:
                 self.model.validation_step(batch)
-            self.val_batch_idx += 1
+                self.val_batch_idx += 1
+    
+    def fit_scratch(self, model, data):
+        self.prepare_data(data)
+        self.prepare_model(model)
+        self.epoch = 0
+        self.train_batch_idx = 0
+        self.val_batch_idx = 0
+        for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where minibatches pass by 
+            for batch in self.train_dataloader:
+                #Forward and backward propagation
+                self.model.training_step(batch)
+                self.train_batch_idx += 1
+            
+            # entering into evaluation mode
+            if self.val_dataloader is None:
+                return
+            for batch in self.val_dataloader:
+                self.model.validation_step(batch)
+                self.val_batch_idx += 1
+        
     
     def plot(self, key, value, device, train):
         """Plot a point in animation."""
