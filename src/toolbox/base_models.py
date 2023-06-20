@@ -160,19 +160,23 @@ class LogisticRegressionScratch(Module):
     def __init__(self, input_dim, lr, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
-        self.w = torch.ones((input_dim, 1), requires_grad= True) * 0.01 * (torch.rand(2).reshape(-1,1) - 0.5)
+        torch.manual_seed(1)
+        self.w = 0.01 * (torch.rand(2, requires_grad= True).reshape(-1,1) - 0.5)
         self.b = torch.ones(1, requires_grad= True) * (-8)
+        # self.w = torch.ones((input_dim, 1), requires_grad= True) * 0.01 * (torch.rand(2).reshape(-1,1) - 0.5)
+        
 
     #That's basically all our model amounts to when computing a label
     def forward(self, X):
-        return torch.sigmoid((torch.matmul(X,self.w) + self.b)).squeeze()
+        z = (torch.matmul(X,self.w) + self.b)
+        return (1/(1 + torch.exp(-z))).squeeze() #since i know it's a vector, better having just one dim
 
     # The loss function is computed over all the samples in the considered minibatch
     def loss(self, y_hat, y):
         y = y.type(torch.float32)
         l_one = torch.matmul(-y, torch.log(y_hat))
         l_zero = torch.matmul(-(1-y), torch.log(1-y_hat))
-        return (l_one + l_zero)
+        return torch.sum(l_one + l_zero) / self.trainer.batch_size
     
     def training_step(self, batch):
         y_hat = self(*batch[:-1]) #prediction (calling forward)
@@ -185,8 +189,8 @@ class LogisticRegressionScratch(Module):
         n = len(self.w)
         m = self.trainer.batch_size
         
-        dj_db = (1 / m) * error.sum()
-        dj_dw = torch.tensor([(1/m) * (torch.matmul((y_hat - y),X[:,j])).sum() for j in range(n)]).reshape(-1,1)
+        dj_db = (1 / m) * torch.sum(error)
+        dj_dw = torch.tensor([(1/m) * torch.sum(torch.matmul(error,X[:,j])) for j in range(n)]).reshape(-1,1)
         
         self.w = self.w - self.lr * dj_dw
         self.b = self.b - self.lr * dj_db

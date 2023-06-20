@@ -1,15 +1,15 @@
 import torch
 
 
-def softmax(X):
+def softmax(z):
     '''
-    Returns matrix of same shape of X, but with the following changes:
+    Returns matrix of same shape of z, but with the following changes:
     - all the elements are between 0 and 1
     - the sum of each row amounts to 1 (on the rows we'll have the predictions for one sample)
     '''
-    expx = torch.exp(X)
-    partition = expx.sum(dim = 1, keepdim = True)
-    return expx / partition
+    expz = torch.exp(z)
+    partition = expz.sum(dim = 1, keepdim = True)
+    return expz / partition
 
 def cross_entropy(Y_hat, Y):
     """ Cross-entropy loss.

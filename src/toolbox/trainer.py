@@ -38,23 +38,23 @@ class Trainer(HyperParameters):
         self.model.train()
         l = 0 
         for batch in self.train_dataloader:
-            l = self.model.get_loss(batch)
-            # print(f"Loss at epoch {self.epoch + 1},batch {self.train_batch_idx % self.num_train_batches + 1}: {l}\n")
-            self.optim.zero_grad()
-            with torch.no_grad():
-                l.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
-                self.optim.step()
+            l = self.model.training_step(batch)
+            print(f"Loss at epoch {self.epoch + 1},batch {self.train_batch_idx % self.num_train_batches + 1}: {l}\n")
+            # self.optim.zero_grad()
+            # with torch.no_grad():
+                # l.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
+                # self.optim.step()
             self.train_batch_idx += 1
         # print(f"Loss at epoch {self.epoch + 1}: {l}\n")
         
         # entering into evaluation mode
-        if self.val_dataloader is None:
-            return
-        self.model.eval()
-        for batch in self.val_dataloader:
-            with torch.no_grad():
-                self.model.validation_step(batch)
-            self.val_batch_idx += 1
+        # if self.val_dataloader is None:
+        #     return
+        # self.model.eval()
+        # for batch in self.val_dataloader:
+        #     with torch.no_grad():
+        #         self.model.validation_step(batch)
+        #     self.val_batch_idx += 1
     
     def plot(self, key, value, device, train):
         """Plot a point in animation."""
