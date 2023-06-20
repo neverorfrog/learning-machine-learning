@@ -49,49 +49,20 @@ class SyntheticRegressionData(DataModule):
         noise = torch.randn(n, 1) * noise
         self.y = torch.matmul(self.X, self.w.reshape((-1, 1))) + b + noise #vector of labels
         
-    
-class DataLoader(DataModule):
-    
-    def __init__(self, path, num_train, num_val, batch_size, features = None, class2Int = True):
-        super().__init__()
-        self.save_hyperparameters(ignore=[path]) #saving already initialized values among constructor parameters
-        
-        #Dataframe creation
-        if features is not None:
-            dataframe = pd.read_csv(path, names = features) #get datafrae from csv file
-        else:
-             dataframe = pd.read_csv(path) 
-        self.dataframe = dataframe
-        self.initXy(dataframe)
-    
-    def __init__(self,txtfile):
-        super().__init__()
-        data = np.loadtxt(txtfile, delimiter=',')
-        X = data[:,:-1]
-        y = data[:,-1]
-        self.X = torch.tensor(X).type(torch.float32)
-        self.y = torch.tensor(y).type(torch.float32)
-        self.num_train = len(y)
-        self.num_val = 0
-        self.batch_size = len(y)
-    
-    def initXy(self, dataframe):
-        inputs, targets = dataframe.iloc[:, :-1], dataframe.iloc[:, -1]    
-        #Features tensor
-        self.X = torch.tensor(inputs.values).type(torch.float32)
-        self.b = torch.zeros(self.X.size(0), 1) #vector of bias values
-        
-        #Label tensor
-        y = np.array(targets.values)
-        classNames = np.unique(y)
-        classIndices = np.arange(0,len(classNames))
-        classes = {className: classIndex for className, classIndex in zip(classNames, classIndices)}
-        if self.class2Int:
-            y = torch.tensor([classes[elem] for elem in y])
-        else:
-            y = torch.tensor(y)
-        self.y = y
 
+class DataLoader(DataModule):
+    def __init__(self, path = None, num_train = None, num_val = None, batch_size = None, features = None, class2Int = True):
+        super().__init__()
+        self.save_hyperparameters() #saving already initialized values among constructor parameters
+        if path is not None:
+            #Dataframe creation
+            if features is not None:
+                dataframe = pd.read_csv(path, names = features) #get datafrae from csv file
+            else:
+                dataframe = pd.read_csv(path) 
+            self.dataframe = dataframe
+            self.initXy(dataframe)
+     
     def summarize(self):
         # gather details
         n_rows = self.X.shape[0]
@@ -115,6 +86,38 @@ class DataLoader(DataModule):
         """Yields a minibatch of data"""
         i = slice(0, self.num_train) if train else slice(self.num_train, None)
         return self.get_tensorloader((self.X, self.y), train, i)
+    
+    def initXy(self, dataframe):
+        inputs, targets = dataframe.iloc[:, :-1], dataframe.iloc[:, -1]    
+        #Features tensor
+        self.X = torch.tensor(inputs.values).type(torch.float32)
+        self.b = torch.zeros(self.X.size(0), 1) #vector of bias values
+        
+        #Label tensor
+        y = np.array(targets.values)
+        classNames = np.unique(y)
+        classIndices = np.arange(0,len(classNames))
+        classes = {className: classIndex for className, classIndex in zip(classNames, classIndices)}
+        if self.class2Int:
+            y = torch.tensor([classes[elem] for elem in y])
+        else:
+            y = torch.tensor(y)
+        self.y = y   
+        
+
+class TXTDataLoader(DataLoader):
+    
+    def __init__(self,txtfile):
+        super().__init__()
+        data = np.loadtxt(txtfile, delimiter=',')
+        X = data[:,:-1]
+        y = data[:,-1]
+        self.X = torch.tensor(X).type(torch.float32)
+        self.y = torch.tensor(y).type(torch.float32)
+        self.num_train = 70
+        self.num_val = 30
+        self.batch_size = 30
+    
     
 
 class FashionMNIST(DataModule):

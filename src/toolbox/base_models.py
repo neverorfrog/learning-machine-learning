@@ -25,7 +25,7 @@ class Module(nn.Module, HyperParameters):
         if init is not None:
             self.net.apply(init)
             
-    def get_loss(self, batch):
+    def training_step(self, batch):
         #in the first argument of self.loss we call forward, passing it the unpacked batch of features
         l = self.loss(self(*batch[:-1]), batch[-1])
         self.trainer.plot('loss', l, self.device, train=True)
@@ -113,8 +113,8 @@ class Classifier(Module):
     def accuracy(self, Y_hat, Y, averaged=True):
         """Compute the number of correct predictions"""
         Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]) # each row is a prediction for sample of belonging to each class
-        preds = (Y_hat.argmax(axis=1)).type(Y.dtype) # the most probable class is the one with highest probability
-        compare = (preds == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
+        predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
+        compare = (predictions == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
         return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
 
     def loss(self, Y_hat, Y, averaged=True):
@@ -140,6 +140,9 @@ class SoftmaxRegressionScratch(Classifier):
     
     def loss(self, Y_hat, Y):
         return cross_entropy(Y_hat, Y)
+    
+    def predict(self, Y_hat):
+        return Y_hat.argmax(axis=1)
 
 class SoftmaxRegression(Classifier):
     """The softmax regression model"""
@@ -155,21 +158,23 @@ class SoftmaxRegression(Classifier):
         return self.net(X)
         
     
-class LogisticRegressionScratch(Module): 
+class LogisticRegressionScratch(Classifier): 
     """The logistic regression model implemented from scratch."""
     def __init__(self, input_dim, lr, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
         torch.manual_seed(1)
-        self.w = 0.01 * (torch.rand(2, requires_grad= True).reshape(-1,1) - 0.5)
+        self.w = 0.01 * (torch.rand(input_dim, requires_grad= True).reshape(-1,1) - 0.5)
         self.b = torch.ones(1, requires_grad= True) * (-8)
         # self.w = torch.ones((input_dim, 1), requires_grad= True) * 0.01 * (torch.rand(2).reshape(-1,1) - 0.5)
         
-
     #That's basically all our model amounts to when computing a label
     def forward(self, X):
         z = (torch.matmul(X,self.w) + self.b)
         return (1/(1 + torch.exp(-z))).squeeze() #since i know it's a vector, better having just one dim
+    
+    def predict(self, y_hat):
+        return y_hat >= 0.5
 
     # The loss function is computed over all the samples in the considered minibatch
     def loss(self, y_hat, y):
@@ -182,7 +187,14 @@ class LogisticRegressionScratch(Module):
         y_hat = self(*batch[:-1]) #prediction (calling forward)
         y = batch[-1] #labels
         self.optim_step(y_hat, y, *batch[:-1])
-        return self.loss(y_hat,y)
+        loss = self.loss(y_hat,y)
+        self.trainer.plot('loss', loss, self.device, train=True)
+        return loss
+    
+    def validation_step(self, batch):
+        Y_hat = self(*batch[:-1])
+        self.trainer.plot('loss', self.loss(Y_hat, batch[-1]), self.device, train=False)
+        self.trainer.plot('acc', self.accuracy(Y_hat, batch[-1]), self.device, train=False)
     
     def optim_step(self, y_hat, y, X):
         error = (y_hat - y)
@@ -199,7 +211,7 @@ class LogisticRegressionScratch(Module):
         return SGD([self.w, self.b], self.lr)
     
     
-class LogisticRegression(Module): 
+class LogisticRegression(Classifier): 
     """The logistic regression model."""
     def __init__(self, input_dim, lr):
         super().__init__()
