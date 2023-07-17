@@ -86,8 +86,8 @@ class LinearRegressionScratch(Module):
         
         #Backward Propagation
         error = (y_hat - y)
-        n = len(self.w)
-        m = self.trainer.batch_size
+        n = len(self.w) #number of features
+        m = self.trainer.batch_size #number of examples
         
         dj_db = (1 / m) * error.sum()
         
