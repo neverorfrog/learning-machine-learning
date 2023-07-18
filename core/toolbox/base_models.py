@@ -138,8 +138,8 @@ class SoftmaxRegressionScratch(Classifier):
         return [self.W, self.b]
     
     def forward(self, X):
-        X = X.reshape((-1, self.W.shape[0])) #one sample on each row
-        return softmax(torch.matmul(X, self.W) + self.b)
+        X = X.reshape((-1, self.W.shape[0])) #one sample on each row -> X.shape = (m, d) 
+        return softmax(torch.matmul(X, self.W) + self.b) #softmax normalizes each row to one
     
     def loss(self, Y_hat, Y):
         return cross_entropy(Y_hat, Y)
