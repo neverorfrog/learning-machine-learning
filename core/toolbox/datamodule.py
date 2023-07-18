@@ -8,7 +8,7 @@ from torchvision import transforms
 
 class DataModule(HyperParameters):
     """The abstract class of data"""
-    def __init__(self, root='../data', num_workers=4):
+    def __init__(self, root='./data', num_workers=4):
         self.save_hyperparameters()
 
     def train_dataloader(self):
