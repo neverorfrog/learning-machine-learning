@@ -130,24 +130,24 @@ class SoftmaxRegressionScratch(Classifier):
     def __init__(self, input_dim, output_dim, lr, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
-        self.W = torch.normal(0, sigma, size=(input_dim, output_dim),requires_grad=True)
-        self.b = torch.zeros(output_dim, requires_grad=True)
+        self.W = torch.normal(0, sigma, size=(output_dim, input_dim),requires_grad=True)
+        self.b = torch.zeros(size=(output_dim,1), requires_grad=True)
 
     def parameters(self):
         '''Parameters needed by the optimizer SGD'''
         return [self.W, self.b]
     
     def forward(self, X):
-        X = X.reshape((-1, self.input_dim)) #one sample on each row -> X.shape = (m, d)
-        Z = torch.matmul(X, self.W) + self.b
-        predictions = softmax(Z, dim = 1) #softmax normalizes each row to one
+        X = (X.reshape((-1, self.input_dim))).T #one sample on each column -> X.shape = (d, m)
+        Z = torch.matmul(self.W, X) + self.b
+        predictions = softmax(Z, dim = 0) #softmax normalizes each row to one
         return predictions
     
     def loss(self, Y_hat, Y):
         return cross_entropy(Y_hat, Y)
     
     def predict(self, Y_hat):
-        return Y_hat.argmax(axis=1)
+        return Y_hat.argmax(axis=0)
 
 class SoftmaxRegression(Classifier):
     """The softmax regression model"""
