@@ -52,7 +52,7 @@ class Classifier(Module):
 
     def accuracy(self, Y_hat, Y, averaged=True):
         """Compute the number of correct predictions"""
-        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]) # each row is a prediction for sample of belonging to each class
+        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]) # each column is a prediction for sample of belonging to each class
         predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
         compare = (predictions == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
         return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
@@ -138,8 +138,10 @@ class SoftmaxRegressionScratch(Classifier):
         return [self.W, self.b]
     
     def forward(self, X):
-        X = X.reshape((-1, self.W.shape[0])) #one sample on each row -> X.shape = (m, d) 
-        return softmax(torch.matmul(X, self.W) + self.b) #softmax normalizes each row to one
+        X = X.reshape((-1, self.input_dim)) #one sample on each row -> X.shape = (m, d)
+        Z = torch.matmul(X, self.W) + self.b
+        predictions = softmax(Z, dim = 1) #softmax normalizes each row to one
+        return predictions
     
     def loss(self, Y_hat, Y):
         return cross_entropy(Y_hat, Y)
