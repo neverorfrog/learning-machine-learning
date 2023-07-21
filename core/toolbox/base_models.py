@@ -43,6 +43,12 @@ class Classifier(Module):
     """The base class of classification models"""
     def __init__(self):
         super().__init__()
+        
+    def loss(self, Y_hat, Y):
+        return cross_entropy(Y_hat, Y)
+    
+    def predict(self, Y_hat):
+        return Y_hat.argmax(axis=0)
          
     def validation_step(self, batch):
         with torch.no_grad():
@@ -56,6 +62,44 @@ class Classifier(Module):
         predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
         compare = (predictions == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
         return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
+    
+
+class MLPScratch(Classifier):
+    
+    def __init__(self, input_dim, output_dim, hidden_dim, lr, sigma=0.01):
+        super().__init__()
+        self.save_hyperparameters()
+        self.W1 = torch.normal(0, sigma, size=(hidden_dim, input_dim),requires_grad=True)
+        self.b1 = torch.zeros(size=(hidden_dim,1), requires_grad=True)
+        self.W2 = torch.normal(0, sigma, size=(output_dim, hidden_dim),requires_grad=True)
+        self.b2 = torch.zeros(size=(output_dim,1), requires_grad=True)
+        
+    def parameters(self):
+        '''Parameters needed by the optimizer SGD'''
+        return [self.W1, self.b1, self.W2, self.b2]
+    
+    def forward(self, X):
+        X = (X.reshape((-1, self.input_dim))).T #one sample on each column -> X.shape = (d, m)
+        a1 = relu(torch.matmul(self.W1, X) + self.b1)
+        a2 = softmax(torch.matmul(self.W2, a1) + self.b2, dim = 0)
+        return a2
+
+class SoftmaxRegressionScratch(Classifier):
+    def __init__(self, input_dim, output_dim, lr, sigma=0.01):
+        super().__init__()
+        self.save_hyperparameters()
+        self.W = torch.normal(0, sigma, size=(output_dim, input_dim),requires_grad=True)
+        self.b = torch.zeros(size=(output_dim,1), requires_grad=True)
+
+    def parameters(self):
+        '''Parameters needed by the optimizer SGD'''
+        return [self.W, self.b]
+    
+    def forward(self, X):
+        X = (X.reshape((-1, self.input_dim))).T #one sample on each column -> X.shape = (d, m)
+        Z = torch.matmul(self.W, X) + self.b
+        predictions = softmax(Z, dim = 0) #softmax normalizes each row to one
+        return predictions
 
         
     
@@ -125,29 +169,6 @@ class LinearRegression(Module):
     def get_w_b(self):
         return (self.net.weight.data, self.net.bias.data)
     
-    
-class SoftmaxRegressionScratch(Classifier):
-    def __init__(self, input_dim, output_dim, lr, sigma=0.01):
-        super().__init__()
-        self.save_hyperparameters()
-        self.W = torch.normal(0, sigma, size=(output_dim, input_dim),requires_grad=True)
-        self.b = torch.zeros(size=(output_dim,1), requires_grad=True)
-
-    def parameters(self):
-        '''Parameters needed by the optimizer SGD'''
-        return [self.W, self.b]
-    
-    def forward(self, X):
-        X = (X.reshape((-1, self.input_dim))).T #one sample on each column -> X.shape = (d, m)
-        Z = torch.matmul(self.W, X) + self.b
-        predictions = softmax(Z, dim = 0) #softmax normalizes each row to one
-        return predictions
-    
-    def loss(self, Y_hat, Y):
-        return cross_entropy(Y_hat, Y)
-    
-    def predict(self, Y_hat):
-        return Y_hat.argmax(axis=0)
 
 class SoftmaxRegression(Classifier):
     """The softmax regression model"""
@@ -162,10 +183,10 @@ class SoftmaxRegression(Classifier):
     def forward(self, X):
         return self.net(X)
     
-    def loss(self, Y_hat, Y, averaged=True):
-        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1])
-        Y = Y.reshape(-1,)
-        return F.cross_entropy(Y_hat, Y, reduction='mean' if averaged else 'none')
+    # def loss(self, Y_hat, Y, averaged=True):
+    #     Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1])
+    #     Y = Y.reshape(-1,)
+    #     return F.cross_entropy(Y_hat, Y, reduction='mean' if averaged else 'none')
         
     
 class LogisticRegressionScratch(Classifier): 

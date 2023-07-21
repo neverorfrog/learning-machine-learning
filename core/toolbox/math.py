@@ -22,3 +22,7 @@ def cross_entropy(Y_hat, Y):
     row_idx = Y #label for each example in the minibatch
     column_idx = list(range(Y_hat.size(1))) #a list from 0 to m-1
     return -torch.log(Y_hat[row_idx, column_idx]).mean()
+
+def relu(X):
+    a = torch.zeros_like(X)
+    return torch.max(X, a)
