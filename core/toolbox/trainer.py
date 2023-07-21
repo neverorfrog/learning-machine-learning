@@ -21,20 +21,22 @@ class Trainer(HyperParameters):
         self.model = model
 
     # That is the effective training cycle in which the epochs pass by
-    def fit(self, model, data):
+    def fit(self, model, data, plot = True):
         self.prepare_data(data)
         self.prepare_model(model)
         self.optim = self.model.configure_optimizers()
         self.epoch = 0
         self.train_batch_idx = 0
         self.val_batch_idx = 0
+        accuracy = 0
+        loss = 100
         for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
             #entering into training mode
             self.model.train() 
             for batch in self.train_dataloader:
                 
                 #Forward propagation
-                loss = self.model.training_step(batch)
+                loss = self.model.training_step(batch, plot)
 
                 #Backward Propagation
                 self.optim.zero_grad()
@@ -48,8 +50,12 @@ class Trainer(HyperParameters):
                 return
             self.model.eval()
             for batch in self.val_dataloader:
-                self.model.validation_step(batch)
+                accuracy = self.model.validation_step(batch, plot)
                 self.val_batch_idx += 1
+                
+        ##Print accuracy in the end
+        print(f"Accuracy: {accuracy}")
+        print(f"Loss: {loss}")
     
     def fit_scratch(self, model, data):
         self.prepare_data(data)

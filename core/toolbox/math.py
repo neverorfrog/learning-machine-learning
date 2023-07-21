@@ -26,3 +26,6 @@ def cross_entropy(Y_hat, Y):
 def relu(X):
     a = torch.zeros_like(X)
     return torch.max(X, a)
+
+def sigmoid(z):
+    return 1.0/(1.0+torch.exp(-z))
