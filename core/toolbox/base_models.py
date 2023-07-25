@@ -54,7 +54,7 @@ class Classifier(Module):
         return cross_entropy(Y_hat, Y)
     
     def predict(self, Y_hat):
-        return Y_hat.argmax(axis = 1) #shape = (m,1)
+        return Y_hat.argmax(axis = 1).squeeze() #shape = (m)
          
     def validation_step(self, batch, plot = True):
         X,Y = self.get_data(batch)
@@ -102,8 +102,8 @@ class MLPScratch(Classifier):
         a = torch.flatten(X, start_dim = 1, end_dim = -1) #one sample on each row -> X.shape = (m, d)
         for i in range(self.num_layers-1):
             a = relu(torch.matmul(a, self.W[i]) + self.b[i])
-        result = softmax(torch.matmul(a, self.W[-1]) + self.b[-1], dim = 1)
-        return result
+        return softmax(torch.matmul(a, self.W[-1]) + self.b[-1], dim = 1)
+        # return softmax(a, dim = 1)
 
 class SoftmaxRegressionScratch(Classifier):
 
