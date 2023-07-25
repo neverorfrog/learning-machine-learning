@@ -3,7 +3,6 @@ from torch import nn
 from toolbox.utils import HyperParameters
 from toolbox.trainer import *
 from toolbox.utils import *
-from torch.functional import F
 from toolbox.math import *
 
 
@@ -24,19 +23,24 @@ class Module(nn.Module, HyperParameters):
         self.forward(*inputs)
         if init is not None:
             self.net.apply(init)
+    
+    def get_data(self, batch):
+        X = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+        Y = batch[-1].type(torch.float32) #labels -> shape = (m)
+        return X,Y
             
-    def training_step(self, batch, plot = True):
-        X = torch.tensor(*batch[:-1]) #features
-        y_hat = self(X) #extraction of X and forward propagation
-        y = batch[-1] #labels
-        loss = self.loss(y_hat, y)
+    def training_step(self, batch, plot = True): #forward propagation
+        X,Y = self.get_data(batch)
+        Y_hat = self(X) #shape = (m, d_out)
+        loss = self.loss(Y_hat, Y) #loss computation
         if plot:
             self.trainer.plot('loss', loss, self.device, train = True)
         return loss
 
     def validation_step(self, batch, plot = True):
+        X,Y = self.get_data(batch)
         with torch.no_grad():
-            loss = self.loss(self(*batch[:-1]), batch[-1])
+            loss = self.loss(self(X), Y)
         if plot:
             self.trainer.plot('loss', loss, self.device, train = False)
         
@@ -50,42 +54,56 @@ class Classifier(Module):
         return cross_entropy(Y_hat, Y)
     
     def predict(self, Y_hat):
-        return Y_hat.argmax(axis=0)
+        return Y_hat.argmax(axis = 1) #shape = (m,1)
          
     def validation_step(self, batch, plot = True):
+        X,Y = self.get_data(batch)
         with torch.no_grad():
-            Y_hat = self(*batch[:-1])
+            Y_hat = self(X)
             if plot:
-                self.trainer.plot('loss', self.loss(Y_hat, batch[-1]), self.device, train=False)
-                self.trainer.plot('acc', self.accuracy(Y_hat, batch[-1]), self.device, train=False)
-        return self.accuracy(Y_hat, batch[-1])
+                self.trainer.plot('loss', self.loss(Y_hat, Y), self.device, train=False)
+                self.trainer.plot('acc', self.accuracy(Y_hat, Y), self.device, train=False)
+        return self.accuracy(Y_hat, Y)
 
     def accuracy(self, Y_hat, Y, averaged=True):
         """Compute the number of correct predictions"""
-        Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1]) # each column is a prediction for a sample of how probably it belongs to each class
         predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
-        compare = (predictions == Y.reshape(-1)).type(torch.float32) # we create a matrix of booleans 
+        compare = (predictions == Y).type(torch.float32) # we create a vector of booleans 
         return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
-            
+
+class MLP(Classifier):
+    
+    def __init__(self, dimensions, lr):
+        super().__init__()
+        self.save_hyperparameters()
+        self.num_classes = dimensions[-1]
+        self.batch_idx = 0
+        self.class_idx = 1
+        self.net = nn.Sequential(nn.Flatten(), 
+                                 nn.Linear(dimensions[0], dimensions[1]), nn.ReLU(), 
+                                 nn.Linear(dimensions[1], dimensions[2]), nn.Softmax(dim = 1))
+        
     
 class MLPScratch(Classifier):
     
     def __init__(self, dimensions, lr, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
+        self.num_classes = dimensions[-1]
         self.num_layers = len(dimensions) - 1   
-        self.W = [torch.normal(0, sigma, size=(dimensions[i], dimensions[i-1]),requires_grad=True) for i in range(1,len(dimensions))]
-        self.b = [torch.zeros(size=(dimensions[i],1), requires_grad=True) for i in range(1,len(dimensions))]
+        self.W = [torch.normal(0, sigma, size=(dimensions[i-1], dimensions[i]),requires_grad=True) for i in range(1,len(dimensions))]
+        self.b = [torch.zeros(size=(1,dimensions[i]), requires_grad=True) for i in range(1,len(dimensions))]
         
     def parameters(self):
         '''Parameters needed by the optimizer SGD'''
         return [*self.W, *self.b]
     
     def forward(self, X):
-        a = (X.reshape((-1, self.dimensions[0]))).T #one sample on each column -> X.shape = (d, m)
+        a = torch.flatten(X, start_dim = 1, end_dim = -1) #one sample on each row -> X.shape = (m, d)
         for i in range(self.num_layers-1):
-            a = relu(torch.matmul(self.W[i], a) + self.b[i])
-        return softmax(torch.matmul(self.W[self.num_layers-1], a) + self.b[self.num_layers-1], dim = 0)
+            a = relu(torch.matmul(a, self.W[i]) + self.b[i])
+        result = softmax(torch.matmul(a, self.W[-1]) + self.b[-1], dim = 1)
+        return result
 
 class SoftmaxRegressionScratch(Classifier):
 
@@ -105,8 +123,6 @@ class SoftmaxRegressionScratch(Classifier):
         predictions = softmax(Z, dim = 0) #softmax normalizes each row to one
         return predictions
 
-        
-    
 class LinearRegressionScratch(Module): 
     """The linear regression model implemented from scratch."""
     def __init__(self, input_dim, lr, sigma=0.01):
@@ -172,25 +188,6 @@ class LinearRegression(Module):
 
     def get_w_b(self):
         return (self.net.weight.data, self.net.bias.data)
-    
-
-class SoftmaxRegression(Classifier):
-    """The softmax regression model"""
-    def __init__(self, input_dim, output_dim, lr):
-        super().__init__()
-        self.save_hyperparameters()
-        self.net = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(input_dim, output_dim)
-        )
-
-    def forward(self, X):
-        return self.net(X)
-    
-    # def loss(self, Y_hat, Y, averaged=True):
-    #     Y_hat = Y_hat.reshape(-1, Y_hat.shape[-1])
-    #     Y = Y.reshape(-1,)
-    #     return F.cross_entropy(Y_hat, Y, reduction='mean' if averaged else 'none')
         
     
 class LogisticRegressionScratch(Classifier): 

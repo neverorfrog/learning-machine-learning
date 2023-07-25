@@ -14,13 +14,13 @@ def softmax(z, dim):
 def cross_entropy(Y_hat, Y):
     """ Cross-entropy loss.
     Inputs:
-    - Y (m,): vector of indices for the correct class. -> m is batch size
-    - Y_hat (m, d): predictions of the model. -> d is the number of classes
+    - Y (m,1): vector of indices for the correct class. -> m is batch size
+    - Y_hat (m,d): predictions of the model. -> d is the number of classes
     Returns the average cross-entropy.
     """
     # This is called integer array indexing because the classes are modeled with one-hot encoding
-    row_idx = Y #label for each example in the minibatch
-    column_idx = list(range(Y_hat.size(1))) #a list from 0 to m-1
+    column_idx = Y.type(torch.int) #label for each example in the minibatch
+    row_idx = list(range(Y_hat.size(0))) #a list from 0 to m-1
     return -torch.log(Y_hat[row_idx, column_idx]).mean()
 
 def relu(X):
@@ -29,3 +29,7 @@ def relu(X):
 
 def sigmoid(z):
     return 1.0/(1.0+torch.exp(-z))
+
+def normalize(z, dim):
+    partition = z.sum(dim, keepdim = True)
+    return z / partition

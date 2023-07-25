@@ -36,7 +36,7 @@ class Trainer(HyperParameters):
             for batch in self.train_dataloader:
                 
                 #Forward propagation
-                loss = self.model.training_step(batch, plot)
+                loss = self.model.training_step(batch, plot) #loss is a scalar
 
                 #Backward Propagation
                 self.optim.zero_grad()
