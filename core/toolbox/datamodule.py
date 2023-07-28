@@ -3,6 +3,7 @@ from toolbox.plotting import show_images
 from toolbox.utils import *
 import torchvision
 import pandas as pd
+from sklearn import datasets
 import numpy as np
 from torchvision import transforms
 
@@ -62,6 +63,10 @@ class DataLoader(DataModule):
                 dataframe = pd.read_csv(path) 
             self.dataframe = dataframe
             self.initXy(dataframe)
+        else:
+            X, y = datasets.make_moons(500, noise=0.20)
+            self.X = torch.tensor(X, dtype = torch.float32)
+            self.y = torch.tensor(y, dtype = torch.float32)
      
     def summarize(self):
         # gather details
@@ -91,7 +96,7 @@ class DataLoader(DataModule):
         inputs, targets = dataframe.iloc[:, :-1], dataframe.iloc[:, -1]    
         #Features tensor
         self.X = torch.tensor(inputs.values).type(torch.float32)
-        self.b = torch.zeros(self.X.size(0), 1) #vector of bias values
+        self.b = torch.zeros(self.X.size(0), 1).type(torch.float32) #vector of bias values
         
         #Label tensor
         y = np.array(targets.values)
@@ -117,26 +122,9 @@ class TXTDataLoader(DataLoader):
         self.num_train = 70
         self.num_val = 30
         self.batch_size = 30
-    
-    
+        
 
-class FashionMNIST(DataModule):
-    """The Fashion-MNIST dataset"""
-    def __init__(self, batch_size=64, resize=(28, 28)):
-        super().__init__()
-        self.save_hyperparameters()
-        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
-        self.train = torchvision.datasets.FashionMNIST(
-            root=self.root, train=True, transform=trans, download=True)
-        self.val = torchvision.datasets.FashionMNIST(
-            root=self.root, train=False, transform=trans, download=True)
-
-    def text_labels(self, indices):
-        """Return text labels"""
-        labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
-                  'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
-        return [labels[int(i)] for i in indices]
-
+class TorchDataset(DataModule):
     def get_dataloader(self, train):
         data = self.train if train else self.val
         return torch.utils.data.DataLoader(data, self.batch_size, shuffle=train, num_workers=self.num_workers)
@@ -146,6 +134,38 @@ class FashionMNIST(DataModule):
         if not labels:
             labels = self.text_labels(y)
         show_images(X.squeeze(1), nrows, ncols, titles=labels)
+        
+    def text_labels(self, indices):
+        """Return text labels"""
+        return [self.labels[int(i)] for i in indices]
+        
+class MNIST(TorchDataset):
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.train = torchvision.datasets.MNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.val = torchvision.datasets.MNIST(
+            root=self.root, train=False, transform=trans, download=True)
+        self.labels = [0,1,2,3,4,5,6,7,8,9]
+
+class FashionMNIST(TorchDataset):
+    """The Fashion-MNIST dataset"""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.train = torchvision.datasets.FashionMNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.val = torchvision.datasets.FashionMNIST(
+            root=self.root, train=False, transform=trans, download=True)
+        self.labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
+                       'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+
+
+
+    
 
 
         

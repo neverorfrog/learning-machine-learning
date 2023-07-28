@@ -3,7 +3,6 @@ from torch import nn
 from toolbox.utils import HyperParameters
 from toolbox.trainer import *
 from toolbox.utils import *
-from toolbox.math import *
 
 
 class Module(nn.Module, HyperParameters):
@@ -23,22 +22,15 @@ class Module(nn.Module, HyperParameters):
         self.forward(*inputs)
         if init is not None:
             self.net.apply(init)
-    
-    def get_data(self, batch):
-        X = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
-        Y = batch[-1].type(torch.float32) #labels -> shape = (m)
-        return X,Y
             
-    def training_step(self, batch, plot = True): #forward propagation
-        X,Y = self.get_data(batch)
+    def training_step(self, X,Y, plot = True): #forward propagation
         Y_hat = self(X) #shape = (m, d_out)
         loss = self.loss(Y_hat, Y) #loss computation
         if plot:
             self.trainer.plot('loss', loss, self.device, train = True)
         return loss
 
-    def validation_step(self, batch, plot = True):
-        X,Y = self.get_data(batch)
+    def validation_step(self, X,Y, plot = True):
         with torch.no_grad():
             loss = self.loss(self(X), Y)
         if plot:
@@ -53,57 +45,104 @@ class Classifier(Module):
     def loss(self, Y_hat, Y):
         return cross_entropy(Y_hat, Y)
     
-    def predict(self, Y_hat):
-        return Y_hat.argmax(axis = 1).squeeze() #shape = (m)
+    def predict(self, X):
+        return self(X).argmax(axis = 1).squeeze() #shape = (m)
          
-    def validation_step(self, batch, plot = True):
-        X,Y = self.get_data(batch)
+    def validation_step(self, X,Y, plot = True):
         with torch.no_grad():
-            Y_hat = self(X)
+            accuracy = self.accuracy(X, Y)
             if plot:
-                self.trainer.plot('loss', self.loss(Y_hat, Y), self.device, train=False)
-                self.trainer.plot('acc', self.accuracy(Y_hat, Y), self.device, train=False)
-        return self.accuracy(Y_hat, Y)
+                self.trainer.plot('acc', accuracy, self.device, train=False)
+        return accuracy
 
-    def accuracy(self, Y_hat, Y, averaged=True):
+    def accuracy(self, X, Y, averaged=True):
         """Compute the number of correct predictions"""
-        predictions = self.predict(Y_hat).type(Y.dtype) # the most probable class is the one with highest probability
+        predictions = self.predict(X).type(Y.dtype) # the most probable class is the one with highest probability
         compare = (predictions == Y).type(torch.float32) # we create a vector of booleans 
         return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
 
-class MLP(Classifier):
+class SimpleNetwork(Classifier):
     
     def __init__(self, dimensions, lr):
         super().__init__()
         self.save_hyperparameters()
         self.num_classes = dimensions[-1]
-        self.batch_idx = 0
-        self.class_idx = 1
         self.net = nn.Sequential(nn.Flatten(), 
                                  nn.Linear(dimensions[0], dimensions[1]), nn.ReLU(), 
                                  nn.Linear(dimensions[1], dimensions[2]), nn.Softmax(dim = 1))
         
-    
-class MLPScratch(Classifier):
+class NetworkSemiScratch(Classifier):
     
     def __init__(self, dimensions, lr, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
         self.num_classes = dimensions[-1]
         self.num_layers = len(dimensions) - 1   
-        self.W = [torch.normal(0, sigma, size=(dimensions[i-1], dimensions[i]),requires_grad=True) for i in range(1,len(dimensions))]
-        self.b = [torch.zeros(size=(1,dimensions[i]), requires_grad=True) for i in range(1,len(dimensions))]
+        self.weights = [torch.normal(0, sigma, size=(dimensions[i-1], dimensions[i]),requires_grad=True) for i in range(1,len(dimensions))]
+        self.biases = [torch.zeros(size=(1,dimensions[i]), requires_grad=True) for i in range(1,len(dimensions))]
         
     def parameters(self):
         '''Parameters needed by the optimizer SGD'''
-        return [*self.W, *self.b]
+        return [*self.weights, *self.biases]
     
     def forward(self, X):
         a = torch.flatten(X, start_dim = 1, end_dim = -1) #one sample on each row -> X.shape = (m, d)
         for i in range(self.num_layers-1):
-            a = relu(torch.matmul(a, self.W[i]) + self.b[i])
-        return softmax(torch.matmul(a, self.W[-1]) + self.b[-1], dim = 1)
-        # return softmax(a, dim = 1)
+            a = torch.sigmoid(torch.matmul(a, self.weights[i]) + self.biases[i])
+        return softmax(torch.matmul(a, self.weights[-1]) + self.biases[-1], dim = 1)
+        
+class NetworkScratch(NetworkSemiScratch):
+    
+    def __init__(self, dimensions, lr, sigma=0.5):
+        super().__init__(dimensions, lr, sigma)
+    
+    def training_step(self, X,Y, plot = True):
+        """Update the network's weights and biases by applying
+        gradient descent using backpropagation to a single batch."""
+        loss = super().training_step(X,Y, plot)
+        nabla_b = [torch.zeros(b.shape) for b in self.biases]
+        nabla_w = [torch.zeros(w.shape) for w in self.weights]
+        for i in range(len(X)):
+            x = X[i,:].reshape(1,-1) #shape = (1,n_i)
+            y = Y[i] #scalar
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
+            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
+            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+        self.weights = [w - (self.lr/len(X))*nw
+                        for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b - (self.lr/len(X))*nb
+                       for b, nb in zip(self.biases, nabla_b)]
+        return loss
+        
+    
+    def backprop(self, x, y):
+        """Return a tuple ``(nabla_b, nabla_w)`` representing the
+        gradient for the cost function C_x.  ``nabla_b`` and
+        ``nabla_w`` are layer-by-layer lists of tensors, similar
+        to ``self.biases`` and ``self.weights``."""
+        nabla_b = [torch.zeros(b.shape) for b in self.biases]
+        nabla_w = [torch.zeros(w.shape) for w in self.weights]
+        
+        # forward
+        activation = x
+        activations = [x] # list to store all the activations, layer by layer
+        zs = [] # list to store all the z vectors, layer by layer
+        for b, w in zip(self.biases, self.weights):
+            z = (torch.matmul(activation, w) + b) #shape = (1,n_i)
+            zs.append(z)
+            activation = sigmoid(z)
+            activations.append(activation)
+            
+        # backward
+        delta = activations[-1]; delta[-1,int(y)] -= 1;  #shape = (1,n_i)
+        nabla_b[-1] = delta
+        nabla_w[-1] = torch.matmul(activations[-2].T, delta) #shape = (n_{i-1}, n_i)
+        for l in range(2, len(activations)):
+            delta = torch.matmul(delta, self.weights[-l+1].T) * sigmoid_prime(zs[-l]) #shape = (1,n_i)
+            nabla_b[-l] = delta
+            nabla_w[-l] = torch.matmul(activations[-l-1].T, delta) #shape = (n_{i-1}, n_i) 
+            
+        return (nabla_b, nabla_w)
 
 class SoftmaxRegressionScratch(Classifier):
 

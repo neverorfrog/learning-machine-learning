@@ -2,7 +2,9 @@ from matplotlib import pyplot as plt
 import collections
 from IPython import display
 from matplotlib_inline import backend_inline
+import torch
 from toolbox.utils import HyperParameters
+import numpy as np
 
 class ProgressBoard(HyperParameters):
     """The board that plots data points in animation."""
@@ -12,9 +14,10 @@ class ProgressBoard(HyperParameters):
                  ls=['-', '--', '-.', ':'], colors=['C0', 'C1', 'C2', 'C3'],
                  fig=None, axes=None, figsize=(5, 4), display=True):
         self.save_hyperparameters()
+        self.fig = plt.figure(figsize=self.figsize)
 
     def draw(self, x, y, label, every_n=1):
-        
+                        
         #Creation of data structure for the points
         Point = collections.namedtuple('Point', ['x', 'y'])
         
@@ -43,11 +46,7 @@ class ProgressBoard(HyperParameters):
         points.clear()
         
         #Display the line
-        if not self.display:
-            return
         useSvgDisplay()
-        if self.fig is None:
-            self.fig = plt.figure(figsize=self.figsize)
         plt_lines, labels = [], []
         for (k, v), ls, color in zip(self.data.items(), self.ls, self.colors):
             plt_lines.append(plt.plot([p.x for p in v], [p.y for p in v],linestyle=ls, color=color)[0])
@@ -98,4 +97,20 @@ def show_images(imgs, num_rows, num_cols, titles = None, scale=1.5):
         if titles:
             ax.set_title(titles[i])
     return axes
+
+# Helper function to plot a decision boundary.
+def plot_decision_boundary(X,y,pred_func):
+    # Set min and max values and give it some padding
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    h = 0.01
+    # Generate a grid of points with distance h between them
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    # Predict the function value for the whole grid
+    points = torch.from_numpy(np.c_[xx.ravel(), yy.ravel()]).type(torch.float32)
+    Z = pred_func(points)
+    Z = Z.reshape(xx.shape)
+    # Plot the contour and training examples
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
     
