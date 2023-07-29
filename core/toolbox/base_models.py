@@ -100,14 +100,7 @@ class NetworkScratch(NetworkSemiScratch):
         """Update the network's weights and biases by applying
         gradient descent using backpropagation to a single batch."""
         loss = super().training_step(X,Y, plot)
-        nabla_b = [torch.zeros(b.shape) for b in self.biases]
-        nabla_w = [torch.zeros(w.shape) for w in self.weights]
-        for i in range(len(X)):
-            x = X[i,:].reshape(1,-1) #shape = (1,n_i)
-            y = Y[i] #scalar
-            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
-            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
-            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+        nabla_b, nabla_w = self.backprop(X, Y)
         self.weights = [w - (self.lr/len(X))*nw
                         for w, nw in zip(self.weights, nabla_w)]
         self.biases = [b - (self.lr/len(X))*nb
@@ -128,18 +121,19 @@ class NetworkScratch(NetworkSemiScratch):
         activations = [x] # list to store all the activations, layer by layer
         zs = [] # list to store all the z vectors, layer by layer
         for b, w in zip(self.biases, self.weights):
-            z = (torch.matmul(activation, w) + b) #shape = (1,n_i)
+            z = (torch.matmul(activation, w) + b) #shape = (m,n_i)
             zs.append(z)
             activation = sigmoid(z)
             activations.append(activation)
             
         # backward
-        delta = activations[-1]; delta[-1,int(y)] -= 1;  #shape = (1,n_i)
-        nabla_b[-1] = delta
+        delta = activations[-1] 
+        delta[range(len(x)),y.type(torch.int)] -= 1 #shape = (m,n_i)
+        nabla_b[-1] = torch.sum(delta, dim = 0) #shape = (1,n_i)
         nabla_w[-1] = torch.matmul(activations[-2].T, delta) #shape = (n_{i-1}, n_i)
         for l in range(2, len(activations)):
             delta = torch.matmul(delta, self.weights[-l+1].T) * sigmoid_prime(zs[-l]) #shape = (1,n_i)
-            nabla_b[-l] = delta
+            nabla_b[-l] = torch.sum(delta, dim = 0) #shape = (1,n_i)
             nabla_w[-l] = torch.matmul(activations[-l-1].T, delta) #shape = (n_{i-1}, n_i) 
             
         return (nabla_b, nabla_w)
