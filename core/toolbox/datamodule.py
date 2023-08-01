@@ -15,58 +15,81 @@ class DataModule(HyperParameters):
     def train_dataloader(self):
         return self.get_dataloader(train=True)
 
-    def val_dataloader(self):
+    def test_dataloader(self):
         return self.get_dataloader(train=False)
     
     def get_dataloader(self, train):
         """Yields a minibatch of data at each next(iter(dataloader))"""
-        # if train:
-        #     indices = list(range(0, self.num_train))
-        #     # The examples are read in random order
-        #     random.shuffle(indices)
-        # else:
-        #     # Read in sequential order for debugging purposes
-        #     indices = list(range(self.num_train, self.num_train+self.num_val))
-        
-        # for i in range(0, len(indices), self.batch_size):
-        #     batch_indices = torch.tensor(indices[i: i+self.batch_size])
-        #     yield self.X[batch_indices], self.y[batch_indices]
-        i = slice(0, self.num_train) if train else slice(self.num_train, None)
-        return self.get_tensorloader((self.X, self.y), train, i)
-
-    def get_tensorloader(self, tensors, train, indices=slice(0, None)):
-        tensors = tuple(a[indices] for a in tensors)
-        dataset = torch.utils.data.TensorDataset(*tensors)
+        data = self.train_data if train else self.test_data
+        dataset = torch.utils.data.TensorDataset(*data)
         return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
-
     
-class SyntheticRegressionData(DataModule): 
-    """Synthetic data generator for linear regression."""
-    def __init__(self, w, b, noise=0.01, num_train=1000, num_val=1000, batch_size=32):
-        super().__init__()
-        self.save_hyperparameters() #saving already initialized values among parameters
-        n = num_train + num_val #number of dataset samples
-        self.X = torch.randn(n, len(w)) #design matrix X (of features)
-        noise = torch.randn(n, 1) * noise
-        self.y = torch.matmul(self.X, self.w.reshape((-1, 1))) + b + noise #vector of labels
-        
-
-class DataLoader(DataModule):
-    def __init__(self, path = None, num_train = None, num_val = None, batch_size = None, features = None, class2Int = True):
+class VisualDataset(DataModule):
+    def __init__(self, batch_size = 64):
         super().__init__()
         self.save_hyperparameters() #saving already initialized values among constructor parameters
-        if path is not None:
+        X, y = datasets.make_moons(500, noise=0.20)
+        separation = int(X.shape[0] * 0.8)
+        self.X_train = X[:separation]; self.X_test = X[separation:]             
+        self.y_train = y[:separation]; self.y_test = y[separation:]
+        self.num_train = len(self.y_train); self.num_test = len(self.y_test)
+        self.train_data = tuple([torch.tensor(self.X_train, dtype = torch.float32), torch.tensor(self.y_train, dtype = torch.float32)])
+        self.test_data = tuple([torch.tensor(self.X_test, dtype = torch.float32), torch.tensor(self.y_test, dtype = torch.float32)]) 
+  
+
+class TorchDataset(DataModule):
+    def get_dataloader(self, train):
+        data = self.train_data if train else self.test_data
+        return torch.utils.data.DataLoader(data, self.batch_size, shuffle=train, num_workers=self.num_workers)
+        
+    def visualize(self, batch, nrows=1, ncols=8, labels=[]):
+        X, y = batch
+        if not labels:
+            labels = self.text_labels(y)
+        show_images(X.squeeze(1), nrows, ncols, titles=labels)
+        
+    def text_labels(self, indices):
+        """Return text labels"""
+        return [self.labels[int(i)] for i in indices]
+        
+class MNIST(TorchDataset):
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.train_data = torchvision.datasets.MNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.test_data = torchvision.datasets.MNIST(
+            root=self.root, train=False, transform=trans, download=True)
+        self.labels = [0,1,2,3,4,5,6,7,8,9]
+
+class FashionMNIST(TorchDataset):
+    """The Fashion-MNIST dataset"""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.train_data = torchvision.datasets.FashionMNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.test_data = torchvision.datasets.FashionMNIST(
+            root=self.root, train=False, transform=trans, download=True)
+        self.labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
+                       'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+
+        
+        
+class CSVDataset(DataModule):
+    def __init__(self, path = None, num_train = None, num_test = None, batch_size = None, features = None, class2Int = True):
+        super().__init__()
+        self.save_hyperparameters() #saving already initialized values among constructor parameters
             #Dataframe creation
-            if features is not None:
-                dataframe = pd.read_csv(path, names = features) #get datafrae from csv file
-            else:
-                dataframe = pd.read_csv(path) 
-            self.dataframe = dataframe
-            self.initXy(dataframe)
+        if features is not None:
+            dataframe = pd.read_csv(path, names = features) #get datafrae from csv file
         else:
-            X, y = datasets.make_moons(500, noise=0.20)
-            self.X = torch.tensor(X, dtype = torch.float32)
-            self.y = torch.tensor(y, dtype = torch.float32)
+            dataframe = pd.read_csv(path) 
+        self.dataframe = dataframe
+        self.initXy(dataframe)
+
      
     def summarize(self):
         # gather details
@@ -86,11 +109,6 @@ class DataLoader(DataModule):
             print(f' - Class {str(c)}: {total} ({ratio})')
         if hasattr(self, 'dataframe'):
             self.dataframe.head()
-        
-    def get_dataloader(self, train):
-        """Yields a minibatch of data"""
-        i = slice(0, self.num_train) if train else slice(self.num_train, None)
-        return self.get_tensorloader((self.X, self.y), train, i)
     
     def initXy(self, dataframe):
         inputs, targets = dataframe.iloc[:, :-1], dataframe.iloc[:, -1]    
@@ -107,11 +125,9 @@ class DataLoader(DataModule):
             y = torch.tensor([classes[elem] for elem in y])
         else:
             y = torch.tensor(y)
-        self.y = y   
+        self.y = y 
         
-
-class TXTDataLoader(DataLoader):
-    
+class TXTDataLoader(CSVDataset):
     def __init__(self,txtfile):
         super().__init__()
         data = np.loadtxt(txtfile, delimiter=',')
@@ -120,51 +136,19 @@ class TXTDataLoader(DataLoader):
         self.X = torch.tensor(X).type(torch.float32)
         self.y = torch.tensor(y).type(torch.float32)
         self.num_train = 70
-        self.num_val = 30
+        self.num_test = 30
         self.batch_size = 30
         
-
-class TorchDataset(DataModule):
-    def get_dataloader(self, train):
-        data = self.train if train else self.val
-        return torch.utils.data.DataLoader(data, self.batch_size, shuffle=train, num_workers=self.num_workers)
-        
-    def visualize(self, batch, nrows=1, ncols=8, labels=[]):
-        X, y = batch
-        if not labels:
-            labels = self.text_labels(y)
-        show_images(X.squeeze(1), nrows, ncols, titles=labels)
-        
-    def text_labels(self, indices):
-        """Return text labels"""
-        return [self.labels[int(i)] for i in indices]
-        
-class MNIST(TorchDataset):
-    def __init__(self, batch_size=64, resize=(28, 28)):
+class SyntheticRegressionData(DataModule): 
+    """Synthetic data generator for linear regression."""
+    def __init__(self, w, b, noise=0.01, num_train=1000, num_test=1000, batch_size=32):
         super().__init__()
-        self.save_hyperparameters()
-        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
-        self.train = torchvision.datasets.MNIST(
-            root=self.root, train=True, transform=trans, download=True)
-        self.val = torchvision.datasets.MNIST(
-            root=self.root, train=False, transform=trans, download=True)
-        self.labels = [0,1,2,3,4,5,6,7,8,9]
-
-class FashionMNIST(TorchDataset):
-    """The Fashion-MNIST dataset"""
-    def __init__(self, batch_size=64, resize=(28, 28)):
-        super().__init__()
-        self.save_hyperparameters()
-        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
-        self.train = torchvision.datasets.FashionMNIST(
-            root=self.root, train=True, transform=trans, download=True)
-        self.val = torchvision.datasets.FashionMNIST(
-            root=self.root, train=False, transform=trans, download=True)
-        self.labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
-                       'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
-
-
-
+        self.save_hyperparameters() #saving already initialized values among parameters
+        n = num_train + num_test #number of dataset samples
+        self.X = torch.randn(n, len(w)) #design matrix X (of features)
+        noise = torch.randn(n, 1) * noise
+        self.y = torch.matmul(self.X, self.w.reshape((-1, 1))) + b + noise #vector of labels
+        
     
 
 

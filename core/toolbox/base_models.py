@@ -128,7 +128,7 @@ class NetworkScratch(NetworkSemiScratch):
             
         # backward
         delta = activations[-1] 
-        delta[range(len(x)),y.type(torch.int)] -= 1 #shape = (m,n_i)
+        delta[range(len(x)),y.type(torch.long)] -= 1 #shape = (m,n_i)
         nabla_b[-1] = torch.sum(delta, dim = 0) #shape = (1,n_i)
         nabla_w[-1] = torch.matmul(activations[-2].T, delta) #shape = (n_{i-1}, n_i)
         for l in range(2, len(activations)):

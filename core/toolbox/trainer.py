@@ -12,9 +12,9 @@ class Trainer(HyperParameters):
     def prepare_data(self, data):
         self.batch_size = data.batch_size
         self.train_dataloader = data.train_dataloader()
-        self.val_dataloader = data.val_dataloader()
+        self.test_dataloader = data.test_dataloader()
         self.num_train_batches = len(self.train_dataloader)
-        self.num_val_batches = (len(self.val_dataloader) if self.val_dataloader is not None else 0)
+        self.num_test_batches = (len(self.test_dataloader) if self.test_dataloader is not None else 0)
 
     def get_data(self, data, batch):
         X = torch.tensor(*batch[:-1]).flatten(start_dim = 1, end_dim = -1) #one sample on each row -> X.shape = (m, d_in)
@@ -34,7 +34,7 @@ class Trainer(HyperParameters):
         self.optim = self.model.configure_optimizers()
         self.epoch = 0
         self.train_batch_idx = 0
-        self.val_batch_idx = 0
+        self.test_batch_idx = 0
         for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
             accuracies = []
             losses = []
@@ -55,14 +55,14 @@ class Trainer(HyperParameters):
                     
             
             #Validation
-            if self.val_dataloader is None:
+            if self.test_dataloader is None:
                 return
             self.model.eval()
-            for batch in self.val_dataloader:
+            for batch in self.test_dataloader:
                 X,Y = self.get_data(data, batch)
                 accuracy = self.model.validation_step(X,Y, plot)
                 accuracies.append(accuracy)
-                self.val_batch_idx += 1
+                self.test_batch_idx += 1
                 
             # ##Print accuracy in the end
         print(f"Accuracy: {np.mean(accuracies)}")
@@ -77,5 +77,5 @@ class Trainer(HyperParameters):
             n = self.num_train_batches / self.plot_train_per_epoch
         else:
             x = self.epoch + 1
-            n = self.num_val_batches / self.plot_valid_per_epoch
-        self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n = int(n))
+            n = self.num_test_batches / self.plot_valid_per_epoch
+        self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'test_') + key, every_n = int(n))

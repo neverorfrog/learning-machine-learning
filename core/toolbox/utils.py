@@ -19,7 +19,7 @@ def cross_entropy(Y_hat, Y):
     Returns the average cross-entropy.
     """
     # This is called integer array indexing because the classes are modeled with one-hot encoding
-    label_idx = Y.type(torch.int) #label for each example in the minibatch
+    label_idx = Y.type(torch.long) #label for each example in the minibatch
     batch_idx = list(range(Y_hat.size(0))) #a list from 0 to m-1
     return -torch.log(Y_hat[batch_idx, label_idx]).mean()
 
