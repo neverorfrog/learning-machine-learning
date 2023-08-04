@@ -1,6 +1,42 @@
 import inspect
 import torch
 
+
+class QuadraticLoss:
+    def fn(a, y):
+        """Return the cost associated with an output ``a`` and desired output
+        ``y``.
+
+        """
+        return 0.5 * torch.norm(a-y)**2
+
+    def delta(z, a, y):
+        """Return the error delta from the output layer."""
+        return (a-y) * sigmoid_prime(z)
+
+
+class CrossEntropyLoss:
+    def __call__(self, a, y):
+        """Return the cost associated with an output ``a`` and desired output
+        ``y``.
+            Inputs:
+        - y (m,1): vector of indices for the correct class. -> m is batch size
+        - a (m,d): activations (predictions) of the model. -> d is the number of classes
+
+        """
+        label_idx = y.type(torch.long) #label for each example in the minibatch
+        batch_idx = list(range(a.size(0))) #a list from 0 to m-1
+        return -torch.log(a[batch_idx, label_idx]).mean()
+
+    def delta(z, a, y):
+        """Return the error delta from the output layer.  Note that the
+        parameter ``z`` is not used by the method.  It is included in
+        the method's parameters in order to make the interface
+        consistent with the delta method for other cost classes.
+
+        """
+        return (a-y)
+
 def softmax(z, dim):
     '''
     Returns matrix of same shape of z, but with the following changes:
@@ -10,18 +46,6 @@ def softmax(z, dim):
     expz = torch.exp(z)
     partition = expz.sum(dim, keepdim = True)
     return expz / partition
-
-def cross_entropy(Y_hat, Y):
-    """ Cross-entropy loss.
-    Inputs:
-    - Y (m,1): vector of indices for the correct class. -> m is batch size
-    - Y_hat (m,d): predictions of the model. -> d is the number of classes
-    Returns the average cross-entropy.
-    """
-    # This is called integer array indexing because the classes are modeled with one-hot encoding
-    label_idx = Y.type(torch.long) #label for each example in the minibatch
-    batch_idx = list(range(Y_hat.size(0))) #a list from 0 to m-1
-    return -torch.log(Y_hat[batch_idx, label_idx]).mean()
 
 def relu(X):
     a = torch.zeros_like(X)

@@ -15,12 +15,13 @@ class DataModule(HyperParameters):
     def train_dataloader(self):
         return self.get_dataloader(train=True)
 
-    def test_dataloader(self):
+    def val_dataloader(self):
         return self.get_dataloader(train=False)
     
     def get_dataloader(self, train):
         """Yields a minibatch of data at each next(iter(dataloader))"""
-        data = self.train_data if train else self.test_data
+        data = self.train_data if train else self.val_data
+        batch_size = self.batch_size if train else len(self.val_data)
         dataset = torch.utils.data.TensorDataset(*data)
         return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
     
@@ -28,7 +29,7 @@ class VisualDataset(DataModule):
     def __init__(self, batch_size = 64):
         super().__init__()
         self.save_hyperparameters() #saving already initialized values among constructor parameters
-        X, y = datasets.make_moons(500, noise=0.20)
+        X, y = datasets.make_moons(2000, noise=0.20)
         separation = int(X.shape[0] * 0.8)
         self.X_train = X[:separation]; self.X_test = X[separation:]             
         self.y_train = y[:separation]; self.y_test = y[separation:]
@@ -36,17 +37,29 @@ class VisualDataset(DataModule):
         self.train_data = tuple([torch.tensor(self.X_train, dtype = torch.float32), torch.tensor(self.y_train, dtype = torch.float32)])
         self.test_data = tuple([torch.tensor(self.X_test, dtype = torch.float32), torch.tensor(self.y_test, dtype = torch.float32)]) 
   
+    def get_dataloader(self, train):
+        """Yields a minibatch of data at each next(iter(dataloader))"""
+        data = self.train_data if train else self.test_data
+        dataset = torch.utils.data.TensorDataset(*data)
+        return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
 
 class TorchDataset(DataModule):
     def get_dataloader(self, train):
         data = self.train_data if train else self.test_data
-        return torch.utils.data.DataLoader(data, self.batch_size, shuffle=train, num_workers=self.num_workers)
+        batch_size = self.batch_size if train else len(self.val_data)
+        return torch.utils.data.DataLoader(data, batch_size, shuffle=train, num_workers=self.num_workers)
         
     def visualize(self, batch, nrows=1, ncols=8, labels=[]):
         X, y = batch
         if not labels:
             labels = self.text_labels(y)
         show_images(X.squeeze(1), nrows, ncols, titles=labels)
+        
+    def val_split(self, train_data):
+        train_size = int(len(train_data) * 0.85)
+        val_size = int(len(train_data) - train_size)
+        train_data, val_data = torch.utils.data.random_split(train_data, [train_size, val_size])
+        return train_data, val_data        
         
     def text_labels(self, indices):
         """Return text labels"""
@@ -57,8 +70,9 @@ class MNIST(TorchDataset):
         super().__init__()
         self.save_hyperparameters()
         trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
-        self.train_data = torchvision.datasets.MNIST(
+        train_data = torchvision.datasets.MNIST(
             root=self.root, train=True, transform=trans, download=True)
+        self.train_data, self.val_data = self.val_split(train_data)
         self.test_data = torchvision.datasets.MNIST(
             root=self.root, train=False, transform=trans, download=True)
         self.labels = [0,1,2,3,4,5,6,7,8,9]

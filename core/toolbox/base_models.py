@@ -23,7 +23,7 @@ class Module(nn.Module, HyperParameters):
         if init is not None:
             self.net.apply(init)
             
-    def training_step(self, X,Y, plot = True): #forward propagation
+    def training_step(self,X,Y,plot = True): #forward propagation
         Y_hat = self(X) #shape = (m, d_out)
         loss = self.loss(Y_hat, Y) #loss computation
         if plot:
@@ -41,14 +41,11 @@ class Classifier(Module):
     """The base class of classification models"""
     def __init__(self):
         super().__init__()
-        
-    def loss(self, Y_hat, Y):
-        return cross_entropy(Y_hat, Y)
     
     def predict(self, X):
         return self(X).argmax(axis = 1).squeeze() #shape = (m)
          
-    def validation_step(self, X,Y, plot = True):
+    def validation_step(self,X,Y, plot = True):
         with torch.no_grad():
             accuracy = self.accuracy(X, Y)
             if plot:
@@ -63,7 +60,7 @@ class Classifier(Module):
 
 class SimpleNetwork(Classifier):
     
-    def __init__(self, dimensions, lr):
+    def __init__(self, dimensions, loss = CrossEntropyLoss):
         super().__init__()
         self.save_hyperparameters()
         self.num_classes = dimensions[-1]
@@ -73,7 +70,7 @@ class SimpleNetwork(Classifier):
         
 class NetworkSemiScratch(Classifier):
     
-    def __init__(self, dimensions, lr, sigma=0.01):
+    def __init__(self, dimensions, lr, loss = CrossEntropyLoss, sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
         self.num_classes = dimensions[-1]
@@ -93,15 +90,17 @@ class NetworkSemiScratch(Classifier):
         
 class NetworkScratch(NetworkSemiScratch):
     
-    def __init__(self, dimensions, lr, sigma=0.5):
+    def __init__(self, dimensions, lr, loss = CrossEntropyLoss, sigma = 0.5, lmbda = 0.5):
         super().__init__(dimensions, lr, sigma)
+        self.save_hyperparameters()
     
-    def training_step(self, X,Y, plot = True):
+    def training_step(self,X,Y,n,plot = True):
         """Update the network's weights and biases by applying
-        gradient descent using backpropagation to a single batch."""
+        gradient descent using backpropagation to a single batch.
+        ``n`` is the size of the entire dataset split"""
         loss = super().training_step(X,Y, plot)
         nabla_b, nabla_w = self.backprop(X, Y)
-        self.weights = [w - (self.lr/len(X))*nw
+        self.weights = [(1 - self.lr*(self.lmbda/n))*w - (self.lr/len(X))*nw
                         for w, nw in zip(self.weights, nabla_w)]
         self.biases = [b - (self.lr/len(X))*nb
                        for b, nb in zip(self.biases, nabla_b)]
