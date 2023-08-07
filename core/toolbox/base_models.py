@@ -60,7 +60,7 @@ class Classifier(Module):
 
 class SimpleNetwork(Classifier):
     
-    def __init__(self, dimensions, loss = CrossEntropyLoss):
+    def __init__(self, dimensions, loss = CrossEntropyLoss()):
         super().__init__()
         self.save_hyperparameters()
         self.num_classes = dimensions[-1]
@@ -70,7 +70,7 @@ class SimpleNetwork(Classifier):
         
 class NetworkSemiScratch(Classifier):
     
-    def __init__(self, dimensions, lr, loss = CrossEntropyLoss, sigma=0.01):
+    def __init__(self, dimensions, lr, loss = CrossEntropyLoss(), sigma=0.01):
         super().__init__()
         self.save_hyperparameters()
         self.num_classes = dimensions[-1]
@@ -90,7 +90,7 @@ class NetworkSemiScratch(Classifier):
         
 class NetworkScratch(NetworkSemiScratch):
     
-    def __init__(self, dimensions, lr, loss = CrossEntropyLoss, sigma = 0.5, lmbda = 0.5):
+    def __init__(self, dimensions, lr, loss = CrossEntropyLoss(), sigma = 0.5, lmbda = 0.5):
         super().__init__(dimensions, lr, sigma)
         self.save_hyperparameters()
     
