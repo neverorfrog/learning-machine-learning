@@ -1,0 +1,104 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\usepackage{graphicx}
+\usepackage{titlepic}
+\usepackage[utf8]{inputenc}
+\usepackage[left=1.1in,right=1.1in, top=1in, bottom= 1in]{geometry}
+\usepackage[none]{hyphenat} % Avoids to go out of margin
+\usepackage{subfiles}
+
+% Font size of figure smaller than normal size:
+\usepackage{caption}
+\captionsetup[figure]{font=small}
+\linespread{1.2}
+
+% --------------------------------------------- %
+
+\title{Homework 1}	                                    % Title
+\author{Flavio Maiorana 2051396}				                % Authors separated by \\
+\date{\today}								    % Date
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\begin{document}
+
+\include{title}
+\newpage
+
+When approaching a classification problem, the steps to be followed
+usually start from looking at the dataset and eventually doing some actions on
+it even before "cranking up" the learning algorithm.
+
+\section{Data visualization and preprocessing}
+
+First of all, it could be useful to gain some insight one how the dataaset is
+made.
+
+\begin{verbatim}[Dataset 1]
+    N Examples: 50000
+    N Inputs: 100
+    N Classes: 10
+    Classes: [0 1 2 3 4 5 6 7 8 9]
+     - Class 0: 5000 (10.0)
+     - Class 1: 5000 (10.0)
+     - Class 2: 5000 (10.0)
+     - Class 3: 5000 (10.0)
+     - Class 4: 5000 (10.0)
+     - Class 5: 5000 (10.0)
+     - Class 6: 5000 (10.0)
+     - Class 7: 5000 (10.0)
+     - Class 8: 5000 (10.0)
+     - Class 9: 5000 (10.0)
+\end{verbatim}
+
+\begin{verbatim}[Dataset 2]
+    N Examples: 50000
+    N Inputs: 1000
+    N Classes: 10
+    Classes: [0 1 2 3 4 5 6 7 8 9]
+     - Class 0: 5000 (10.0)
+     - Class 1: 5000 (10.0)
+     - Class 2: 5000 (10.0)
+     - Class 3: 5000 (10.0)
+     - Class 4: 5000 (10.0)
+     - Class 5: 5000 (10.0)
+     - Class 6: 5000 (10.0)
+     - Class 7: 5000 (10.0)
+     - Class 8: 5000 (10.0)
+     - Class 9: 5000 (10.0)
+\end{verbatim}
+
+\newpage
+
+Some comments:
+\begin{itemize}
+    \item Both datasets have examples pertaining 10 different Classes
+    \item The number of examples is pretty high 
+    \item Both datasets are balanced
+\end{itemize}
+
+After that, one could want to visualize the data in order to be able to spot
+some peculiarities of the data by just literally looking at it. Although, the
+first problem we confront with with this specific dataset is the number of
+features.
+
+% \tableofcontents
+% \newpage
+
+% \subfile{chapters/Introduction}
+% \clearpage
+
+% \subfile{chapters/Development}
+% \clearpage
+
+% \subfile{chapters/Conclusions}
+% \clearpage
+
+\bibliographystyle{unsrt}
+\bibliography{ref}
+\nocite{*}  % to include references which were not cited
+
+\end{document}

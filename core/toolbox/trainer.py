@@ -19,7 +19,6 @@ class Trainer(HyperParameters):
     def get_data(self, data, batch):
         X = torch.tensor(*batch[:-1]).flatten(start_dim = 1, end_dim = -1) #one sample on each row -> X.shape = (m, d_in)
         Y = batch[-1].type(torch.float32)# labels -> shape = (m)
-        # Y = data.labels == Y #labels -> shape = (m, d) -> one-hot encoding
         return X,Y
         
     def prepare_model(self, model):
