@@ -35,15 +35,20 @@ class KNN(Classifier):
     def __init__(self, k = 5):
         super().__init__(KNeighborsClassifier(n_neighbors=k, n_jobs = -1))
         self.param_grid = {
-            'n_neighbors': [8,20,50], 
+            'n_neighbors': [5,15,35,40,50], 
             'weights': ['uniform', 'distance'],  # Different weight options
             'p': [1, 2]  # 1 for Manhattan, 2 for Euclidean
         }
         
 from sklearn import svm
 class SVM(Classifier):
-    def __init__(self):
-        super().__init__(svm.SVC(kernel="linear"))
+    def __init__(self, kernel = "linear", degree = 3):
+        super().__init__(svm.SVC(kernel=kernel, degree = degree))
+        self.param_grid = {
+            'C': [0.1, 1, 10],
+            'kernel': ['linear', 'rbf', 'poly'],
+            'gamma': [0.1, 1, 'scale', 'auto']
+        }
         
         
 from sklearn.naive_bayes import GaussianNB    

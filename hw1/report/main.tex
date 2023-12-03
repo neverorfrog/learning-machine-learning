@@ -142,7 +142,7 @@ the computational cost of inference rises too.
 For this learning algorithm, two different hyperparameter configurations were
 tried: the first with 5 neighbors, uniform weights for each sample and euclidean
 distance as metric. With this configuration we obtain the following evaluation
-data for the first dataset: 
+data for the first dataset. For evaluation
 
 \begin{verbatim} [Dataset 1]
     Train Accuracy:  0.9890285730361938
@@ -200,11 +200,245 @@ weighted avg      0.970     0.970     0.970     15000
 \end{verbatim}
 
 The performance is similar to the one with the first dataset, but a little bit
-lower. That is obviously due to the higher number of input features.
+lower. That is obviously due to the higher number of input features. 
 
+We can enhance performance by changing the hyperparameter to some suboptimal
+values through hyperparameter search. In particular:
 
+\begin{verbatim}
+    Best Hyperparameters: {'n_neighbors': 35, 'p': 2, 'weights': 'uniform'}
+Best Accuracy: 0.9878
+Train Accuracy:  0.9881714285714286
+Test Accuracy:  0.9895333333333334
+              precision    recall  f1-score   support
 
+           0      0.997     0.994     0.995      1551
+           1      0.996     0.997     0.996      1468
+           2      0.994     0.987     0.990      1505
+           3      0.968     0.978     0.973      1465
+           4      0.983     0.992     0.987      1483
+           5      0.980     0.966     0.973      1592
+           6      0.995     0.994     0.994      1536
+           7      0.992     0.994     0.993      1462
+           8      0.995     0.999     0.997      1484
+           9      0.996     0.997     0.997      1454
 
+    accuracy                          0.990     15000
+\end{verbatim}
+
+So, with 35 neighbors and euclidean distance the performance is at its best.
+
+\subsection{Softmax Regression}
+
+Another possibly well suited method for the problem could be logistic
+regression, or its generalization (in a one-vs-rest manner) to multiple classes
+softmax regression. Softmax regression is basically a linear model that adds a
+non-linearity by assigning each sample a probabilistic distribution, through the
+softmax function, based on its, linearly computed, scores. This method has been
+implemented by scratch in the file "models.py" in the class SoftmaxRegression,
+including the computation of the inference through the softmax function, the
+cross entropy loss (from the negative log likelihood) and a spartan
+implementation of a L2 regularized gradient descent with analitically computed
+derivatives. The accuracy obtained with this method is the following:
+
+\begin{verbatim}
+    Train Accuracy:  0.9801428318023682
+    Test Accuracy:  0.9834666848182678
+\end{verbatim}
+
+Although, the logistic regression of scikit does a little bit better on both datasets.
+
+\begin{verbatim}[Logistic Regression on Dataset 1]
+    precision    recall  f1-score   support
+
+    0      0.997     0.992     0.995      1551
+    1      0.998     0.996     0.997      1468
+    2      0.992     0.987     0.990      1505
+    3      0.972     0.982     0.977      1465
+    4      0.987     0.989     0.988      1483
+    5      0.977     0.970     0.974      1592
+    6      0.995     0.995     0.995      1536
+    7      0.992     0.993     0.992      1462
+    8      0.996     0.999     0.998      1484
+    9      0.996     0.998     0.997      1454
+
+accuracy                          0.990     15000
+macro avg      0.990     0.990     0.990     15000
+weighted avg      0.990     0.990     0.990     15000
+\end{verbatim}
+
+\begin{verbatim}[Logistic Regression on Dataset 2]
+    precision    recall  f1-score   support
+
+    0      0.986     0.983     0.984      1551
+    1      0.991     0.993     0.992      1468
+    2      0.974     0.973     0.973      1505
+    3      0.914     0.934     0.924      1465
+    4      0.964     0.972     0.968      1483
+    5      0.948     0.927     0.937      1592
+    6      0.990     0.984     0.987      1536
+    7      0.976     0.981     0.979      1462
+    8      0.993     0.995     0.994      1484
+    9      0.992     0.989     0.991      1454
+
+accuracy                          0.973     15000
+macro avg      0.973     0.973     0.973     15000
+weighted avg      0.973     0.973     0.973     15000
+\end{verbatim}
+
+Adding standardization does not enhance performance.
+
+\begin{verbatim}[Logistic Regression on Standardized Dataset 2]
+    precision    recall  f1-score   support
+
+    0      0.986     0.983     0.984      1551
+    1      0.991     0.993     0.992      1468
+    2      0.974     0.973     0.973      1505
+    3      0.914     0.934     0.924      1465
+    4      0.964     0.972     0.968      1483
+    5      0.948     0.927     0.937      1592
+    6      0.990     0.984     0.987      1536
+    7      0.976     0.981     0.979      1462
+    8      0.993     0.995     0.994      1484
+    9      0.992     0.989     0.991      1454
+
+accuracy                          0.973     15000
+macro avg      0.973     0.973     0.973     15000
+weighted avg      0.973     0.973     0.973     15000
+\end{verbatim}
+
+\subsection{SVM}
+
+The last method that was tried is Support Vector Machines. This method is still
+parametric and linear and practically tries to maximise a margin between
+samples. 
+
+\begin{verbatim}[Linear SVM on Dataset 1]
+    precision    recall  f1-score   support
+
+    0      0.995     0.990     0.992      1551
+    1      0.997     0.997     0.997      1468
+    2      0.988     0.983     0.985      1505
+    3      0.962     0.979     0.970      1465
+    4      0.985     0.990     0.988      1483
+    5      0.976     0.965     0.971      1592
+    6      0.994     0.992     0.993      1536
+    7      0.992     0.990     0.991      1462
+    8      0.995     0.998     0.997      1484
+    9      0.995     0.997     0.996      1454
+
+accuracy                          0.988     15000
+macro avg      0.988     0.988     0.988     15000
+weighted avg      0.988     0.988     0.988     15000
+\end{verbatim}
+
+Linear SVM does slightly worse than KNN with 5 neighbors, and it takes also
+considerably more time to train the SVM classifier. Instead, by using a
+polynomial kernel of degree 3 we obtain a slightly better performance.
+
+\begin{verbatim}[Poly SVM Dataset 1]
+    precision    recall  f1-score   support
+
+    0      0.998     0.994     0.996      1551
+    1      0.998     0.996     0.997      1468
+    2      0.993     0.988     0.991      1505
+    3      0.971     0.983     0.977      1465
+    4      0.987     0.992     0.989      1483
+    5      0.980     0.970     0.975      1592
+    6      0.997     0.995     0.996      1536
+    7      0.993     0.996     0.995      1462
+    8      0.995     0.999     0.997      1484
+    9      0.997     0.998     0.997      1454
+
+accuracy                          0.991     15000
+macro avg      0.991     0.991     0.991     15000
+weighted avg      0.991     0.991     0.991     15000
+\end{verbatim}
+
+SVM with 3-degree polynomial kernel has a better performance than linear SVM and
+also KNN. Although, it takes slightly more time to train it. Also, when
+increasing the degree of the polynomial, performance decreases, which means the
+classifier would overfit on training data.
+
+\begin{verbatim}[Poly SVM Dataset 2]
+    Train Accuracy:  0.9751142859458923
+    Test Accuracy:  0.9735999703407288
+              precision    recall  f1-score   support
+
+           0      0.987     0.984     0.985      1551
+           1      0.990     0.992     0.991      1468
+           2      0.976     0.973     0.975      1505
+           3      0.913     0.940     0.926      1465
+           4      0.964     0.975     0.969      1483
+           5      0.953     0.924     0.938      1592
+           6      0.989     0.986     0.987      1536
+           7      0.980     0.982     0.981      1462
+           8      0.993     0.993     0.993      1484
+           9      0.993     0.990     0.991      1454
+
+    accuracy                          0.974     15000
+   macro avg      0.974     0.974     0.974     15000
+weighted avg      0.974     0.974     0.974     15000
+\end{verbatim}
+
+\subsection{Considerations}
+
+In the end KNN and Poly SVM were the best methods on both datasets. KNN has the
+advantage of taking less computational during training time, while it costs
+slighly more during inference. Conversely, SVM has slighly higher accuracy but
+it takes a little bit more to train it. In both cases the main problem is the
+precision and recall of classes 3 and 5, which often get exchanged.
+
+\section{Training on reduced dataset}
+
+As a last experiment, we could try to train some classifier on a reduced
+dataset, namely with less input features.
+
+\begin{verbatim}[Logistic Regression on first dataset with 20 features]
+    Train Accuracy:  0.9883428812026978
+    Test Accuracy:  0.9904000163078308
+              precision    recall  f1-score   support
+
+           0      0.997     0.993     0.995      1551
+           1      0.997     0.995     0.996      1468
+           2      0.992     0.987     0.990      1505
+           3      0.973     0.982     0.977      1465
+           4      0.987     0.990     0.988      1483
+           5      0.978     0.972     0.975      1592
+           6      0.997     0.995     0.996      1536
+           7      0.993     0.994     0.994      1462
+           8      0.995     0.999     0.997      1484
+           9      0.996     0.999     0.997      1454
+
+    accuracy                          0.990     15000
+   macro avg      0.990     0.991     0.990     15000
+weighted avg      0.990     0.990     0.990     15000
+\end{verbatim}
+
+\begin{verbatim}[Logistic Regression on second dataset with 20 features]
+    Train Accuracy:  0.974057137966156
+Test Accuracy:  0.9735999703407288
+              precision    recall  f1-score   support
+
+           0      0.986     0.983     0.985      1551
+           1      0.991     0.992     0.991      1468
+           2      0.974     0.975     0.974      1505
+           3      0.921     0.935     0.928      1465
+           4      0.966     0.974     0.970      1483
+           5      0.950     0.928     0.939      1592
+           6      0.988     0.984     0.986      1536
+           7      0.976     0.982     0.979      1462
+           8      0.993     0.994     0.993      1484
+           9      0.992     0.990     0.991      1454
+
+    accuracy                          0.974     15000
+   macro avg      0.974     0.974     0.974     15000
+weighted avg      0.974     0.974     0.974     15000
+\end{verbatim}
+
+As we can see, the performance is pretty much invaried, but we gained that the
+training time is cut in less than half. Same for the second dataset. On the
+second dataset the performance is even very slightly better.
 
 \bibliographystyle{unsrt}
 \bibliography{ref}
