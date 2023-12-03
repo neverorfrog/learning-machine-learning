@@ -1,31 +1,40 @@
+import colorsys
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import train_test_split
 import torch
+
+# indices = np.where(np.isin(dataset.y, [0,1]))[0]
+# newY = dataset.y[indices]
+# newX = dataset.X[indices]
+# dataset = Dataset(X = newX, y = newY)
 
 class Dataset():
     def __init__(self, path=None, num_train=None, num_test=None, batch_size=64, features=None,  X=None, y=None):
         #initializaing from CSV
         if path is not None:
             if features is not None:
-                dataframe = pd.read_csv(path, names=features)
+                self.dataframe = pd.read_csv(path, names=features)
             else:
-                dataframe = pd.read_csv(path)
-            self.initXy(dataframe)
+                self.dataframe = pd.read_csv(path)
+            self.initXy(self.dataframe)
         #X and y already there
         elif X is not None and y is not None:
             self.X = X
             self.y = y
-            self.classes = np.unique(self.y)
-            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=1127)
-        
+            
+        self.classes = np.unique(self.y)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=1127)    
         self.batch_size = batch_size
         self.num_features = self.X.shape[1]
         self.num_train = len(self.y_train); self.num_test = len(self.y_test)
         self.train_data = tuple([self.X_train, self.y_train])
         self.test_data = tuple([self.X_test, self.y_test])
         self.num_classes = len(self.classes) 
-        
+              
     def train_dataloader(self):
         return self.get_dataloader(train=True)
 
@@ -80,9 +89,6 @@ class Dataset():
         else:
             y = None      
         self.y = y
-        self.classes = np.unique(self.y)
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=1127)
-    
-    
-    
-    
+        
+    def head(self):
+        print(self.X[0])

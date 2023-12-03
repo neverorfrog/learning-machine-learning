@@ -32,7 +32,7 @@ class Trainer(Parameters):
         self.epoch = 0
         self.train_batch_idx = 0
         self.test_batch_idx = 0
-        # accuracy = 0
+        accuracy = 0
         early_stopping = False
         for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
             if early_stopping == True: break
@@ -48,22 +48,21 @@ class Trainer(Parameters):
                 self.model.training_step(X, y, batch, plot) #loss is a scalar
                 self.train_batch_idx += 1               
             
-            #Validation
-            # if self.test_dataloader is None:
-            #     return
-            # self.model.eval()
-            # stuck_epochs = 0
-            # for batch in self.test_dataloader:
-            #     X,Y = self.get_data(data, batch)
-            #     old_accuracy = accuracy
-            #     accuracy = self.model.validation_step(X,Y,plot)
-            #     delta = accuracy - old_accuracy
-            #     stuck_epochs = (stuck_epochs+1) if delta < 0.01 else 0
-            #     if stuck_epochs == 10: early_stopping = True
-            #     self.test_batch_idx += 1
+            #Testing
+            if self.test_dataloader is None:
+                return
+            stuck_epochs = 0
+            for batch in self.test_dataloader:
+                X,Y = self.get_data(data, batch)
+                old_accuracy = accuracy
+                accuracy = self.model.score(X,Y)
+                delta = accuracy - old_accuracy
+                stuck_epochs = (stuck_epochs+1) if delta < 0.01 else 0
+                if stuck_epochs == 10: early_stopping = True
+                self.test_batch_idx += 1
                 
         # Print accuracy on the test set at the end of all training 
-        test_accuracy = self.model.accuracy(data.X_test,data.y_test)
+        test_accuracy = self.model.score(data.X_test,data.y_test)
         print(f"Accuracy: {test_accuracy}")
         
     
