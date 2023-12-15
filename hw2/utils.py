@@ -171,6 +171,6 @@ def evaluate(model, dataset):
     print("Test Accuracy: ", model.score(dataset.X_test, dataset.y_test))
     preds = model.predict(dataset.X_test)
     print(classification_report(dataset.y_test, preds, digits=3))
-    cm = confusion_matrix(dataset.y_test, preds, labels=None, sample_weight=None)
-    plot_confusion_matrix(dataset.y_test, preds, dataset.classes, normalize=True)
+    # cm = confusion_matrix(dataset.y_test, preds, labels=None, sample_weight=None)
+    # plot_confusion_matrix(dataset.y_test, preds, dataset.classes, normalize=True)
 

@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from utils import Parameters, ProgressBoard
 
@@ -33,7 +34,8 @@ class Trainer(Parameters):
         self.epoch = 0
         self.train_batch_idx = 0
         self.val_batch_idx = 0
-        accuracy = 0
+        old_mean_accuracy = 0
+        worse_epochs = 0
         early_stopping = False
         
                 
@@ -54,19 +56,20 @@ class Trainer(Parameters):
                     loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
                     self.optim.step() 
                     
-            # #Validation
-            # if self.val_dataloader is None:
-            #     return
-            # self.model.eval()
-            # stuck_epochs = 0
-            # for batch in self.val_dataloader:
-            #     X,Y = self.get_data(data, batch)
-            #     old_accuracy = accuracy
-            #     accuracy = self.model.testing_step(X,Y,plot)
-            #     delta = accuracy - old_accuracy
-            #     stuck_epochs = (stuck_epochs+1) if delta < 0.01 else 0
-            #     if stuck_epochs == 10: early_stopping = True
-            #     self.val_batch_idx += 1
+            #Validation
+            if self.test_dataloader is None:
+                return
+            self.model.eval()
+            accuracies = []
+            for batch in self.test_dataloader:
+                X,Y = self.get_data(data, batch)
+                accuracies.append(self.model.score(X,Y))
+                self.val_batch_idx += 1
+            
+            mean_accuracy = np.mean(accuracies)          
+            if mean_accuracy - old_mean_accuracy < 0: worse_epochs += 1
+            if worse_epochs == 3: early_stopping = True
+            old_mean_accuracy = mean_accuracy
                 
         # Print accuracy on the test set at the end of all training 
         test_accuracy = self.model.score(data.X_test,data.y_test)
@@ -81,5 +84,5 @@ class Trainer(Parameters):
                 n = self.num_train_batches / self.plot_train_per_epoch
             else:
                 x = self.epoch + 1
-                n = self.num_val_batches / self.plot_valid_per_epoch
+                n = self.num_test_batches / self.plot_valid_per_epoch
             self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n = int(n))
