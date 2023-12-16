@@ -68,7 +68,7 @@ class Trainer(Parameters):
             
             mean_accuracy = np.mean(accuracies)          
             if mean_accuracy - old_mean_accuracy < 0: worse_epochs += 1
-            if worse_epochs == 3: early_stopping = True
+            # if worse_epochs == 3: early_stopping = True
             old_mean_accuracy = mean_accuracy
                 
         # Print accuracy on the test set at the end of all training 

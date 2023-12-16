@@ -1,9 +1,9 @@
 import numpy as np
 import torch
-from PIL import Image
 import cv2
 import os
 import pandas as pd
+from sklearn.utils import shuffle
 
 class Dataset():
     """
@@ -25,9 +25,8 @@ class Dataset():
         self.test_data = tuple([self.X_test, self.y_test])
         self.num_classes = len(self.classes)
         
-    def process_image(self, image_path):
-        img = cv2.imread(image_path)
-        return torch.tensor(img).permute(2, 0, 1)
+    def process_image(self, image):
+        return torch.tensor(image).permute(2, 0, 1)
     
     def create_dataframe(self,path,train):
         if train:
@@ -46,11 +45,21 @@ class Dataset():
                     image_path = os.path.join(label_folder, image_file)
                     
                     # Use the process_image function to read and process images
-                    image_tensor = self.process_image(image_path)
-                                                            
-                    data.append(image_tensor)
+                    img = cv2.imread(image_path)                                
+                    data.append(self.process_image(img))
                     labels.append(label)
                     
+                    if label == '4' or label == '0':
+                        new_img = self.brightness_contrast(img)
+                        data.append(self.process_image(new_img))
+                        labels.append(label)
+                        
+                    # if label == '4':
+                    #     new_img = self.blur(img)
+                    #     data.append(self.process_image(new_img))
+                    #     labels.append(label)
+                    
+                
         df = pd.DataFrame({'Image': data, 'Label': labels})
         return df 
               
@@ -105,3 +114,12 @@ class Dataset():
         
     def head(self):
         print(self.X[0])
+
+    def brightness_contrast(self, image):
+        alpha = 1.5  # Contrast control (1.0 means no change)
+        beta = 50    # Brightness control (0 means no change)
+        return cv2.addWeighted(image, alpha, np.zeros(image.shape, image.dtype), 0, beta)
+    
+    def blur(self, image):
+        kernel_size = (5, 5)
+        return cv2.GaussianBlur(image, kernel_size, 0) 
