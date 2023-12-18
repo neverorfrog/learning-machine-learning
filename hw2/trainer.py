@@ -70,7 +70,7 @@ class Trainer(Parameters):
                 self.val_batch_idx += 1
             
             mean_accuracy = np.mean(accuracies)
-            print(f"ACCURACY: {mean_accuracy:.3f} LOSS: {np.mean(losses):.3f}")       
+            print(f"EPOCH {self.epoch} ACCURACY: {mean_accuracy:.3f} LOSS: {np.mean(losses):.3f}")       
             if mean_accuracy - old_mean_accuracy < 0: worse_epochs += 1
             if worse_epochs == 10: early_stopping = True
             old_mean_accuracy = mean_accuracy

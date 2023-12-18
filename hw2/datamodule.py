@@ -9,11 +9,11 @@ class Dataset():
     """
     path : folder containing the label folders
     """
-    def __init__(self, path=None, num_train=None, num_test=None, batch_size=64, X=None, y=None):
+    def __init__(self, load=False, num_train=None, num_test=None, batch_size=64, X=None, y=None):
         #initializaing from folders of images
-        if path is not None:
-            self.dataframe_train = self.create_dataframe(path, train = True)
-            self.dataframe_test = self.create_dataframe(path, train = False)
+        if load is False:
+            self.dataframe_train = self.create_dataframe("data", train = True)
+            self.dataframe_test = self.create_dataframe("data", train = False)
             self.X_train, self.y_train = self.extract_tensors(self.dataframe_train)
             self.X_test, self.y_test = self.extract_tensors(self.dataframe_test)
             self.save()
@@ -52,15 +52,15 @@ class Dataset():
                     data.append(self.process_image(img))
                     labels.append(label)
                     
-                    if label == '4' or label == '0':
+                    if label == '4':
                         new_img = self.brightness_contrast(img)
                         data.append(self.process_image(new_img))
                         labels.append(label)
                         
-                    # if label == '4':
-                    #     new_img = self.blur(img)
-                    #     data.append(self.process_image(new_img))
-                    #     labels.append(label)
+                    if label == '4':
+                        new_img = self.blur(img)
+                        data.append(self.process_image(new_img))
+                        labels.append(label)
                     
                 
         df = pd.DataFrame({'Image': data, 'Label': labels})

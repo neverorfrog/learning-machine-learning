@@ -16,9 +16,9 @@ class Model(nn.Module):
 
         #Linear layers
         self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(64*9*9,64,bias=bias)
-        self.linear2 = nn.Linear(64,32,bias=bias)
-        self.linear3 = nn.Linear(32,num_classes,bias=bias)
+        self.linear1 = nn.Linear(64*9*9,32,bias=bias)
+        self.linear2 = nn.Linear(32,16,bias=bias)
+        self.linear3 = nn.Linear(16,num_classes,bias=bias)
         
         self.device = device
         self.lr = lr

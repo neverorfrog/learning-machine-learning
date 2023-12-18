@@ -7,7 +7,7 @@ from utils import *
 from car_env import *
 
 car_env = CarEnv()
-dataset = Dataset()
+dataset = Dataset(load = False)
 dataset.summarize()
 
 model = Model(name="dec-18", num_classes=5, lr=0.00001)
