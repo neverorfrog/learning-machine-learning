@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import torch.nn as nn
@@ -6,7 +7,7 @@ import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Model(nn.Module):
-    def __init__(self,num_classes,bias=True):
+    def __init__(self,name, num_classes,lr = 0.00001, bias=True):
         super().__init__()
         #Convolutional Layers (take as input the image)
         self.conv1 = nn.Conv2d(3,32,kernel_size=8,stride=4,bias=bias,device=device)
@@ -20,6 +21,8 @@ class Model(nn.Module):
         self.linear3 = nn.Linear(32,num_classes,bias=bias)
         
         self.device = device
+        self.lr = lr
+        self.name = name
 
     def forward(self, x):
         '''
@@ -51,7 +54,7 @@ class Model(nn.Module):
         return fn(y_hat, y)
     
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.0001)
+        return torch.optim.Adam(self.parameters(), lr = self.lr)
     
     def training_step(self,X,Y,plot = True): #forward propagation
         Y_hat = self(X) #shape = (m, d_out)
@@ -65,6 +68,8 @@ class Model(nn.Module):
             loss = self.loss(self(X), Y)
         if plot:
             self.trainer.plot('loss', loss, self.device, train = False)
+        return loss*loss
+
             
     def predict(self, X):
         return self(X).argmax(axis = 1).squeeze() #shape = (m)
@@ -74,3 +79,14 @@ class Model(nn.Module):
         predictions = torch.tensor(self.predict(X)).type(Y.dtype) # the most probable class is the one with highest probability
         compare = (predictions == Y).type(torch.float32) # we create a vector of booleans 
         return compare.mean().item() if averaged else compare # fraction of ones wrt the whole matrix
+    
+    def save(self):
+        path = os.path.join("models",self.name)
+        if not os.path.exists(path): os.mkdir(path)
+        torch.save(self.state_dict(), open(os.path.join(path,"model.pt"), "wb"))
+        print("MODELS SAVED!")
+
+    def load(self):
+        path = os.path.join("models",self.name)
+        self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
+        print("MODELS LOADED!")

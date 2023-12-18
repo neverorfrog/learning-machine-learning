@@ -27,7 +27,7 @@ class Trainer(Parameters):
         self.model = model
 
     # That is the effective training cycle in which the epochs pass by
-    def fit(self, model, data, plot = True, scratch = False):
+    def fit(self, model, data, plot = True):
         self.prepare_data(data)
         self.prepare_model(model)
         self.optim = self.model.configure_optimizers()
@@ -61,19 +61,23 @@ class Trainer(Parameters):
                 return
             self.model.eval()
             accuracies = []
+            losses = []
             for batch in self.test_dataloader:
                 X,Y = self.get_data(data, batch)
                 accuracies.append(self.model.score(X,Y))
+                losses.append(self.model.testing_step(X,Y, plot = False))
                 self.val_batch_idx += 1
             
-            mean_accuracy = np.mean(accuracies)          
+            mean_accuracy = np.mean(accuracies)
+            print(f"ACCURACY: {mean_accuracy:.3f} LOSS: {np.mean(losses):.3f}")       
             if mean_accuracy - old_mean_accuracy < 0: worse_epochs += 1
-            # if worse_epochs == 3: early_stopping = True
+            if worse_epochs == 10: early_stopping = True
             old_mean_accuracy = mean_accuracy
                 
         # Print accuracy on the test set at the end of all training 
         test_accuracy = self.model.score(data.X_test,data.y_test)
         print(f"Accuracy: {test_accuracy}")
+        model.save()
         
     
     def plot(self, key, value, device, train):

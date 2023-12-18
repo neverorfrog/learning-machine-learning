@@ -6,13 +6,15 @@ warnings.filterwarnings("ignore")
 from utils import *
 from car_env import *
 
+car_env = CarEnv()
 dataset = Dataset(path = './data')
 dataset.summarize()
 
-car_env = CarEnv()
-model = Model(5)
-trainer = Trainer(max_epochs = 10)
-trainer.fit(model, dataset)
+model = Model(name="dec-18", num_classes=5, lr=0.000001)
+trainer = Trainer(max_epochs = 50)
+trainer.fit(model, dataset, plot = False)
+
+# model.load()
 evaluate(model, dataset)
 
 car_env.play(model)
