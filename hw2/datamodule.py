@@ -16,6 +16,9 @@ class Dataset():
             self.dataframe_test = self.create_dataframe(path, train = False)
             self.X_train, self.y_train = self.extract_tensors(self.dataframe_train)
             self.X_test, self.y_test = self.extract_tensors(self.dataframe_test)
+            self.save()
+        else:
+            self.load()
             
         self.classes = np.unique(self.y_train)
         self.batch_size = batch_size
@@ -123,3 +126,19 @@ class Dataset():
     def blur(self, image):
         kernel_size = (5, 5)
         return cv2.GaussianBlur(image, kernel_size, 0) 
+    
+    def save(self):
+        path = os.path.join("data","tensors")
+        torch.save(self.X_train, open(os.path.join(path,"X_train.pt"), "wb"))
+        torch.save(self.y_train, open(os.path.join(path,"y_train.pt"), "wb"))
+        torch.save(self.X_test, open(os.path.join(path,"X_test.pt"), "wb"))
+        torch.save(self.y_test, open(os.path.join(path,"y_test.pt"), "wb"))
+        print("DATA SAVED!")
+
+    def load(self):
+        path = os.path.join("data","tensors")
+        self.X_train = torch.load(open(os.path.join(path,"X_train.pt"),"rb"))
+        self.y_train = torch.load(open(os.path.join(path,"y_train.pt"),"rb"))
+        self.X_test = torch.load(open(os.path.join(path,"X_test.pt"),"rb"))
+        self.y_test = torch.load(open(os.path.join(path,"y_test.pt"),"rb"))
+        print("DATA LOADED!")

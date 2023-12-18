@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 from utils import Parameters, ProgressBoard
@@ -90,3 +91,4 @@ class Trainer(Parameters):
                 x = self.epoch + 1
                 n = self.num_test_batches / self.plot_valid_per_epoch
             self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n = int(n))
+            
