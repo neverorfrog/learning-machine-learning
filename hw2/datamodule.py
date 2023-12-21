@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from sklearn.utils.class_weight import compute_class_weight
 from image_utils import *
+from training_utils import sample_from_categorical
 
 class Dataset():
     """
@@ -51,30 +52,28 @@ class Dataset():
                     data.append(process_image(image_path, nothing))
                     labels.append(label)
                     
-                    #Just fifth label
-                    if label == '4':
-                        data.append(process_image(image_path, blur))
-                        labels.append(label)
+                    sampled_label = sample_from_categorical(torch.tensor([0.2, 0.05, 0.05, 0, 0.7]))
                     
-                    if label == '4' or label == '0':
+                    if int(label) == sampled_label:
                         data.append(process_image(image_path, brightness_contrast))
+                        labels.append(label)
+                        data.append(process_image(image_path, blur))
                         labels.append(label)
                 
         df = pd.DataFrame({'Image': data, 'Label': labels})
         return df 
               
-    def train_dataloader(self):
-        return self.get_dataloader(train=True)
+    def train_dataloader(self, batch_size):
+        return self.get_dataloader(True, batch_size)
 
-    def test_dataloader(self):
-        return self.get_dataloader(train=False)
+    def test_dataloader(self, batch_size):
+        return self.get_dataloader(False, batch_size)
     
-    def get_dataloader(self, train):
+    def get_dataloader(self, train, batch_size):
         """Yields a minibatch of data at each next(iter(dataloader))"""
         data = self.train_data if train else self.test_data
-        batch_size = self.batch_size if train else len(self.test_data)
         dataset = torch.utils.data.TensorDataset(*data)
-        return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
+        return torch.utils.data.DataLoader(dataset, batch_size, shuffle=train)
      
     def summarize(self):
         # gathering details
