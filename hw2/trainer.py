@@ -29,19 +29,26 @@ class Trainer(Parameters):
 
     # That is the effective training cycle in which the epochs pass by
     def fit(self, model, data, plot = True):
+        
+        # stuff for the optimizer
         self.prepare_data(data)
         self.prepare_model(model)
         self.optim = self.model.configure_optimizers()
+        
+        # stuff for iterations
         self.epoch = 0
         self.train_batch_idx = 0
         self.val_batch_idx = 0
-        old_mean_accuracy = 0
-        worse_epochs = 0
+        
+        #stuff for early stopping
         early_stopping = False
+        patience = 5
+        worse_epochs = 0
+        best_loss = np.inf
         
                 
         for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
-            if early_stopping == True: break
+            # if early_stopping == True: break
             
             #Training
             self.model.train() 
@@ -61,24 +68,30 @@ class Trainer(Parameters):
             if self.test_dataloader is None:
                 return
             self.model.eval()
-            accuracies = []
+            accuracies = []            
             losses = []
             for batch in self.test_dataloader:
                 X,Y = self.get_data(data, batch)
                 accuracies.append(self.model.score(X,Y))
                 losses.append(self.model.testing_step(X,Y, plot = False))
                 self.val_batch_idx += 1
+            mean_loss = np.mean(losses) 
+            print(f"EPOCH {self.epoch} ACCURACY: {np.mean(accuracies):.3f} LOSS: {mean_loss:.3f}")  
             
-            mean_accuracy = np.mean(accuracies)
-            print(f"EPOCH {self.epoch} ACCURACY: {mean_accuracy:.3f} LOSS: {np.mean(losses):.3f}")       
-            if mean_accuracy - old_mean_accuracy < 0: worse_epochs += 1
-            if worse_epochs == 10: early_stopping = True
-            old_mean_accuracy = mean_accuracy
+            # Early stopping mechanism     
+            if mean_loss > best_loss:
+                worse_epochs += 1
+            else:
+                best_loss = mean_loss
+                worse_epochs = 0
+                model.save()
+            if worse_epochs == patience: 
+                early_stopping = True
+                print(f'Early stopping at epoch {self.epoch} due to no improvement in validation loss.')
                 
         # Print accuracy on the test set at the end of all training 
         test_accuracy = self.model.score(data.X_test,data.y_test)
         print(f"Accuracy: {test_accuracy}")
-        model.save()
         
     
     def plot(self, key, value, device, train):

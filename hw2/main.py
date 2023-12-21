@@ -7,11 +7,11 @@ from utils import *
 from car_env import *
 
 car_env = CarEnv()
-dataset = Dataset(load = False)
+dataset = Dataset(load = True)
 dataset.summarize()
 
-model = Model(name="dec-18", num_classes=5, lr=0.00001)
-trainer = Trainer(max_epochs = 50)
+model = Model(name="dec-21", num_classes=5, lr=0.000001)
+trainer = Trainer(max_epochs = 1)
 trainer.fit(model, dataset, plot = False)
 
 # model.load()
