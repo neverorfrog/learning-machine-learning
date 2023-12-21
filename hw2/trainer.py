@@ -43,7 +43,7 @@ class Trainer(Parameters):
         early_stopping = False
         patience = 5
         worse_epochs = 0
-        best_loss = np.inf
+        best_score = 0
         
                 
         for self.epoch in range(1, self.max_epochs + 1): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
@@ -79,15 +79,15 @@ class Trainer(Parameters):
             print(f"EPOCH {self.epoch} SCORE: {mean_score:.3f} LOSS: {mean_loss:.3f}")  
             
             # Early stopping mechanism     
-            if mean_loss > best_loss:
+            if mean_score < best_score:
                 worse_epochs += 1
             else:
-                best_loss = mean_loss
+                best_score = mean_score
                 worse_epochs = 0
                 model.save()
             if worse_epochs == patience: 
                 early_stopping = True
-                print(f'Early stopping at epoch {self.epoch} due to no improvement in validation loss.')
+                print(f'Early stopping at epoch {self.epoch} due to no improvement.')
         
     
     def plot(self, key, value, device, train):

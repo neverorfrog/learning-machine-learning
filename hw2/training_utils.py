@@ -128,3 +128,30 @@ def sample_from_categorical(probabilities):
     categorical_distribution = torch.distributions.Categorical(probabilities)
     sampled_index = categorical_distribution.sample()
     return sampled_index.item()
+
+
+def compute_class_weights(targets, weighting_strategy='balanced'):
+    """
+    Calculate class weights based on the provided targets.
+
+    Parameters:
+    - targets (torch.Tensor): 1D tensor containing class labels.
+    - weighting_strategy (str): Strategy for calculating weights. Options: 'balanced'.
+
+    Returns:
+    - torch.Tensor: Computed class weights.
+    """
+    targets = torch.tensor(targets, dtype=torch.int32)
+    class_counts = torch.bincount(targets)
+    total_samples = class_counts.sum().float()
+
+    if weighting_strategy == 'balanced':
+        # Compute weights to balance the classes
+        weights = total_samples / (len(class_counts) * class_counts.float())
+
+        # Normalize weights to sum to 1
+        weights /= weights.sum()
+
+        return weights
+    else:
+        raise ValueError(f"Invalid weighting_strategy: {weighting_strategy}")

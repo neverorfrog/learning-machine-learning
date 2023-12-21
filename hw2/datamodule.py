@@ -3,9 +3,9 @@ import torch
 import cv2
 import os
 import pandas as pd
-from sklearn.utils.class_weight import compute_class_weight
 from image_utils import *
-from training_utils import sample_from_categorical
+from training_utils import sample_from_categorical, compute_class_weights
+from torch.utils.data import DataLoader, WeightedRandomSampler, TensorDataset
 
 class Dataset():
     """
@@ -52,13 +52,13 @@ class Dataset():
                     data.append(process_image(image_path, nothing))
                     labels.append(label)
                     
-                    sampled_label = sample_from_categorical(torch.tensor([0.2, 0.05, 0.05, 0, 0.7]))
+                    # sampled_label = sample_from_categorical(torch.tensor([0.19, 0.03, 0.03, 0, 0.75]))
                     
-                    if int(label) == sampled_label:
-                        data.append(process_image(image_path, brightness_contrast))
-                        labels.append(label)
-                        data.append(process_image(image_path, blur))
-                        labels.append(label)
+                    # if int(label) == sampled_label:
+                    data.append(process_image(image_path, brightness_contrast))
+                    labels.append(label)
+                    data.append(process_image(image_path, blur))
+                    labels.append(label)
                 
         df = pd.DataFrame({'Image': data, 'Label': labels})
         return df 
@@ -72,8 +72,10 @@ class Dataset():
     def get_dataloader(self, train, batch_size):
         """Yields a minibatch of data at each next(iter(dataloader))"""
         data = self.train_data if train else self.test_data
-        dataset = torch.utils.data.TensorDataset(*data)
-        return torch.utils.data.DataLoader(dataset, batch_size, shuffle=train)
+        labels = torch.tensor(data[-1], dtype=torch.int32)
+        weights = [self.class_weights()[label] for label in labels]
+        sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+        return DataLoader(TensorDataset(*data), batch_size, sampler = sampler)
      
     def summarize(self):
         # gathering details
@@ -114,6 +116,10 @@ class Dataset():
         
     def head(self):
         print(self.X[0])
+        
+    def class_weights(self):
+        class_weights = compute_class_weights(self.y_train)
+        return torch.tensor(class_weights, dtype=torch.float32)
     
     def save(self):
         path = os.path.join("data","tensors")

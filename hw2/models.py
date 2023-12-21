@@ -1,7 +1,6 @@
 import os
 from sklearn.metrics import classification_report
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from training_utils import accuracy
@@ -9,7 +8,7 @@ from training_utils import accuracy
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Model(nn.Module):
-    def __init__(self,name, num_classes, score_function = accuracy, lr = 0.00001, bias=True):
+    def __init__(self,name, num_classes, loss_function, score_function = accuracy, lr = 0.00001, bias=True):
         super().__init__()
         #Convolutional Layers (take as input the image)
         self.conv1 = nn.Conv2d(3,32,kernel_size=8,stride=4,bias=bias,device=device)
@@ -18,9 +17,9 @@ class Model(nn.Module):
 
         #Linear layers
         self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(64,num_classes,bias=bias)
-        # self.linear2 = nn.Linear(32,16,bias=bias)
-        # self.linear3 = nn.Linear(16,num_classes,bias=bias)
+        self.linear1 = nn.Linear(64,32,bias=bias)
+        self.linear2 = nn.Linear(32,16,bias=bias)
+        self.linear3 = nn.Linear(16,num_classes,bias=bias)
         
         #Normalization layers
         self.bn1 = nn.BatchNorm2d(16)
@@ -51,9 +50,9 @@ class Model(nn.Module):
         # Linear Layers
         # print("state shape={0}".format(x.shape)) #(32,64,8,8) or (1,64,8,8)
         x = torch.flatten(x,start_dim=1)
-        # x = self.activation(self.linear1(x))
-        # x = self.activation(self.linear2(x))
-        y = self.linear1(x)
+        x = self.activation(self.linear1(x))
+        x = self.activation(self.linear2(x))
+        y = self.linear3(x)
         # print("y"); print(y.shape) # (32,5)
         return y
     
