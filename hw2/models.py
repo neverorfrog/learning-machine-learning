@@ -16,9 +16,16 @@ class Model(nn.Module):
 
         #Linear layers
         self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(64*9*9,32,bias=bias)
+        self.linear1 = nn.Linear(64,32,bias=bias)
         self.linear2 = nn.Linear(32,16,bias=bias)
         self.linear3 = nn.Linear(16,num_classes,bias=bias)
+        
+        #Normalization layers
+        self.bn1 = nn.BatchNorm2d(16)
+        self.bn2 = nn.BatchNorm2d(32)
+        
+        #Max-pooling layers
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         
         self.device = device
         self.lr = lr
@@ -33,14 +40,13 @@ class Model(nn.Module):
         '''
         # Convolutions
         x = torch.tensor(x, dtype=torch.float32)
-        x = self.activation(self.conv1(x))
-        x = self.activation(self.conv2(x))
+        x = self.activation(self.pool(self.conv1(x)))
+        x = self.activation(self.pool(self.conv2(x)))
         x = self.activation(self.conv3(x))
         
         # Linear Layers
         # print("state shape={0}".format(x.shape)) #(32,64,8,8) or (1,64,8,8)
         x = torch.flatten(x,start_dim=1)
-        # if (x.shape == (4096,64)): print("State={}".format(x.shape))
         x = self.activation(self.linear1(x))
         x = self.activation(self.linear2(x))
         y = self.linear3(x)
