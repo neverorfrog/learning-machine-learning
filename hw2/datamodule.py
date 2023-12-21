@@ -3,7 +3,8 @@ import torch
 import cv2
 import os
 import pandas as pd
-from sklearn.utils import shuffle
+from sklearn.utils.class_weight import compute_class_weight
+from image_utils import *
 
 class Dataset():
     """
@@ -21,15 +22,14 @@ class Dataset():
             self.load()
             
         self.classes = np.unique(self.y_train)
+                
         self.batch_size = batch_size
         self.num_features = self.X_train.shape[1]
         self.num_train = len(self.y_train); self.num_test = len(self.y_test)
         self.train_data = tuple([self.X_train, self.y_train])
         self.test_data = tuple([self.X_test, self.y_test])
         self.num_classes = len(self.classes)
-        
-    def process_image(self, image):
-        return torch.tensor(image).permute(2, 0, 1)
+        # self.class_weights = compute_class_weight('balanced', classes=self.classes, y=self.dataframe_train[self.dataframe_train.columns[1]].values())
     
     def create_dataframe(self,path,train):
         if train:
@@ -47,21 +47,18 @@ class Dataset():
                 for image_file in os.listdir(label_folder):
                     image_path = os.path.join(label_folder, image_file)
                     
-                    # Use the process_image function to read and process images
-                    img = cv2.imread(image_path)                                
-                    data.append(self.process_image(img))
+                    # All labels                          
+                    data.append(process_image(image_path, nothing))
                     labels.append(label)
                     
+                    #Just fifth label
                     if label == '4':
-                        new_img = self.brightness_contrast(img)
-                        data.append(self.process_image(new_img))
-                        labels.append(label)
-                        
-                    if label == '4':
-                        new_img = self.blur(img)
-                        data.append(self.process_image(new_img))
+                        data.append(process_image(image_path, blur))
                         labels.append(label)
                     
+                    if label == '4' or label == '0':
+                        data.append(process_image(image_path, brightness_contrast))
+                        labels.append(label)
                 
         df = pd.DataFrame({'Image': data, 'Label': labels})
         return df 
@@ -89,6 +86,7 @@ class Dataset():
         print(f'N Inputs: {n_cols}')
         print(f'N Classes: {n_classes}')
         print(f'Classes: {self.classes}')
+        # print(f'Classe Weights: {self.class_weights}')
         # class breakdown
         for c in self.classes:
             total = len(self.y_train[self.y_train == c])
@@ -117,15 +115,6 @@ class Dataset():
         
     def head(self):
         print(self.X[0])
-
-    def brightness_contrast(self, image):
-        alpha = 1.5  # Contrast control (1.0 means no change)
-        beta = 50    # Brightness control (0 means no change)
-        return cv2.addWeighted(image, alpha, np.zeros(image.shape, image.dtype), 0, beta)
-    
-    def blur(self, image):
-        kernel_size = (5, 5)
-        return cv2.GaussianBlur(image, kernel_size, 0) 
     
     def save(self):
         path = os.path.join("data","tensors")
