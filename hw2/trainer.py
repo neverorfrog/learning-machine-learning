@@ -1,19 +1,18 @@
 import os
 import numpy as np
 import torch
-from utils import Parameters, ProgressBoard
+from plotting_utils import Parameters, ProgressBoard
 
 
 class Trainer(Parameters):
     """The base class for training models with data"""
-    def __init__(self, max_epochs = 10, plot_train_per_epoch = 1, plot_valid_per_epoch = 1):
+    def __init__(self, max_epochs = 10, batch_size = 64, plot_train_per_epoch = 1, plot_valid_per_epoch = 1):
         self.save_parameters()
         self.board = ProgressBoard()
         
     def prepare_data(self, data):
-        self.batch_size = data.batch_size
-        self.train_dataloader = data.train_dataloader()
-        self.test_dataloader = data.test_dataloader()
+        self.train_dataloader = data.train_dataloader(self.batch_size)
+        self.test_dataloader = data.test_dataloader(self.batch_size)
         self.num_train_batches = len(self.train_dataloader)
         self.num_test_batches = (len(self.test_dataloader) if self.test_dataloader is not None else 0)
 
@@ -47,15 +46,14 @@ class Trainer(Parameters):
         best_loss = np.inf
         
                 
-        for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
-            # if early_stopping == True: break
+        for self.epoch in range(1, self.max_epochs + 1): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
+            if early_stopping == True: break
             
             #Training
             self.model.train() 
             for batch in self.train_dataloader:
                 #Forward propagation
                 X,Y = self.get_data(data, batch)
-                n = len(X) * self.num_train_batches
                 loss = self.model.training_step(X,Y,plot) #loss is a scalar
                 self.train_batch_idx += 1
                 #Backward Propagation
@@ -68,15 +66,17 @@ class Trainer(Parameters):
             if self.test_dataloader is None:
                 return
             self.model.eval()
-            accuracies = []            
+            scores = []            
             losses = []
             for batch in self.test_dataloader:
-                X,Y = self.get_data(data, batch)
-                accuracies.append(self.model.score(X,Y))
-                losses.append(self.model.testing_step(X,Y, plot = False))
+                inputs,labels = self.get_data(data, batch)
+                loss, score = self.model.testing_step(inputs, labels, plot)
+                losses.append(loss)
+                scores.append(score)
                 self.val_batch_idx += 1
             mean_loss = np.mean(losses) 
-            print(f"EPOCH {self.epoch} ACCURACY: {np.mean(accuracies):.3f} LOSS: {mean_loss:.3f}")  
+            mean_score = np.mean(scores)
+            print(f"EPOCH {self.epoch} SCORE: {mean_score:.3f} LOSS: {mean_loss:.3f}")  
             
             # Early stopping mechanism     
             if mean_loss > best_loss:
@@ -88,10 +88,6 @@ class Trainer(Parameters):
             if worse_epochs == patience: 
                 early_stopping = True
                 print(f'Early stopping at epoch {self.epoch} due to no improvement in validation loss.')
-                
-        # Print accuracy on the test set at the end of all training 
-        test_accuracy = self.model.score(data.X_test,data.y_test)
-        print(f"Accuracy: {test_accuracy}")
         
     
     def plot(self, key, value, device, train):
