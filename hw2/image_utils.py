@@ -1,6 +1,8 @@
+import random
 import cv2
 import numpy as np
 import torch
+from torchvision import transforms
 
 
 def process_image(image_path, transformation):
@@ -12,6 +14,22 @@ def process_image(image_path, transformation):
 
 def nothing(image):
     return image
+
+def random_color_jitter():
+    # Randomly adjust brightness, contrast, saturation, and hue
+    brightness_factor = random.uniform(0.8, 1.2)
+    contrast_factor = random.uniform(0.8, 1.2)
+    saturation_factor = random.uniform(0.8, 1.2)
+    hue_factor = random.uniform(0.2, 0.5)
+
+    color_jitter = transforms.ColorJitter(
+        brightness=brightness_factor,
+        contrast=contrast_factor,
+        saturation=saturation_factor,
+        hue=hue_factor
+    )
+
+    return color_jitter
 
 def brightness_contrast(image):
     alpha = 1.5  # Contrast control (1.0 means no change)

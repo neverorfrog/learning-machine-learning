@@ -1,11 +1,11 @@
 import numpy as np
 import torch
-import cv2
 import os
 import pandas as pd
 from image_utils import *
-from training_utils import sample_from_categorical, compute_class_weights
+from training_utils import compute_class_weights
 from torch.utils.data import DataLoader, WeightedRandomSampler, TensorDataset
+from torchvision import transforms
 
 class Dataset():
     """
@@ -30,7 +30,9 @@ class Dataset():
         self.train_data = tuple([self.X_train, self.y_train])
         self.test_data = tuple([self.X_test, self.y_test])
         self.num_classes = len(self.classes)
-        # self.class_weights = compute_class_weight('balanced', classes=self.classes, y=self.dataframe_train[self.dataframe_train.columns[1]].values())
+        self.transform = transforms.Compose([
+            random_color_jitter()
+        ])
     
     def create_dataframe(self,path,train):
         if train:
@@ -51,14 +53,6 @@ class Dataset():
                     # All labels                          
                     data.append(process_image(image_path, nothing))
                     labels.append(label)
-                    
-                    # sampled_label = sample_from_categorical(torch.tensor([0.19, 0.03, 0.03, 0, 0.75]))
-                    
-                    # if int(label) == sampled_label:
-                    data.append(process_image(image_path, brightness_contrast))
-                    labels.append(label)
-                    data.append(process_image(image_path, blur))
-                    labels.append(label)
                 
         df = pd.DataFrame({'Image': data, 'Label': labels})
         return df 
@@ -74,8 +68,16 @@ class Dataset():
         data = self.train_data if train else self.test_data
         labels = torch.tensor(data[-1], dtype=torch.int32)
         weights = [self.class_weights()[label] for label in labels]
-        sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
-        return DataLoader(TensorDataset(*data), batch_size, sampler = sampler)
+        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+        return DataLoader(
+            dataset = TensorDataset(*data),
+            batch_size = batch_size,
+            # sampler = weighted_sampler,
+            shuffle = train,
+            collate_fn = lambda x: (
+                torch.stack([self.transform(item[0]) for item in x]),
+                torch.tensor([item[1] for item in x]))
+        )
      
     def summarize(self):
         # gathering details

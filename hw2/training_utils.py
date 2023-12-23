@@ -30,6 +30,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
+    y_true = torch.tensor(y_true, dtype=torch.int32)
     # Only use the labels that appear in the data
     classes = classes[unique_labels(y_true, y_pred)]
     if normalize:
@@ -68,6 +69,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
+    plt.show()
     return ax
     
     
@@ -130,7 +132,7 @@ def sample_from_categorical(probabilities):
     return sampled_index.item()
 
 
-def compute_class_weights(targets, weighting_strategy='balanced'):
+def compute_class_weights(targets):
     """
     Calculate class weights based on the provided targets.
 
@@ -145,13 +147,25 @@ def compute_class_weights(targets, weighting_strategy='balanced'):
     class_counts = torch.bincount(targets)
     total_samples = class_counts.sum().float()
 
-    if weighting_strategy == 'balanced':
-        # Compute weights to balance the classes
-        weights = total_samples / (len(class_counts) * class_counts.float())
+    # Compute weights to balance the classes
+    weights = total_samples / (len(class_counts) * class_counts.float())
 
-        # Normalize weights to sum to 1
-        weights /= weights.sum()
+    # Normalize weights to sum to 1
+    weights /= weights.sum()
 
-        return weights
-    else:
-        raise ValueError(f"Invalid weighting_strategy: {weighting_strategy}")
+    return weights
+    
+    
+def count_elements(tensor):
+    """
+    Count the occurrences of each unique element in a PyTorch tensor.
+
+    Parameters:
+    - tensor (torch.Tensor): Input tensor.
+
+    Returns:
+    - dict: A dictionary where keys are unique elements, and values are their counts.
+    """
+    unique_elements, counts = torch.unique(tensor, return_counts=True)
+    count_dict = dict(zip(unique_elements.numpy(), counts.numpy()))
+    return count_dict

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+from training_utils import count_elements
 from plotting_utils import Parameters, ProgressBoard
 
 
@@ -43,7 +44,7 @@ class Trainer(Parameters):
         early_stopping = False
         patience = 5
         worse_epochs = 0
-        best_score = 0
+        best_loss = np.inf
         
                 
         for self.epoch in range(1, self.max_epochs + 1): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
@@ -54,6 +55,7 @@ class Trainer(Parameters):
             for batch in self.train_dataloader:
                 #Forward propagation
                 X,Y = self.get_data(data, batch)
+                # print(count_elements(Y))
                 loss = self.model.training_step(X,Y,plot) #loss is a scalar
                 self.train_batch_idx += 1
                 #Backward Propagation
@@ -79,10 +81,10 @@ class Trainer(Parameters):
             print(f"EPOCH {self.epoch} SCORE: {mean_score:.3f} LOSS: {mean_loss:.3f}")  
             
             # Early stopping mechanism     
-            if mean_score < best_score:
+            if mean_loss > best_loss:
                 worse_epochs += 1
             else:
-                best_score = mean_score
+                best_loss = mean_loss
                 worse_epochs = 0
                 model.save()
             if worse_epochs == patience: 

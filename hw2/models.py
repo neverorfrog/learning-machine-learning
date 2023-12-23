@@ -1,19 +1,19 @@
 import os
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from training_utils import accuracy
+from training_utils import accuracy, plot_confusion_matrix
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Model(nn.Module):
-    def __init__(self,name, num_classes, loss_function, score_function = accuracy, lr = 0.00001, bias=True):
+    def __init__(self,name, num_classes, loss_function, score_function = accuracy, lr = 0.001, bias=True):
         super().__init__()
         #Convolutional Layers (take as input the image)
-        self.conv1 = nn.Conv2d(3,32,kernel_size=8,stride=4,bias=bias,device=device)
-        self.conv2 = nn.Conv2d(32,64,kernel_size=4,stride=2,bias=bias, device=device)
-        self.conv3 = nn.Conv2d(64,64,kernel_size=2,stride=1,bias=bias, device=device)
+        self.conv1 = nn.Conv2d(3,32,kernel_size=7,padding=1,stride = 3, bias=bias,device=device)
+        self.conv2 = nn.Conv2d(32,64,kernel_size=5,padding=1,stride = 2, bias=bias, device=device)
+        self.conv3 = nn.Conv2d(64,64,kernel_size=3,padding=1,stride = 1, bias=bias, device=device)
 
         #Linear layers
         self.activation = nn.ReLU()
@@ -33,6 +33,7 @@ class Model(nn.Module):
         self.name = name
         self.score_function = score_function
         self.num_classes = num_classes
+        self.loss_function = loss_function
 
     def forward(self, x):
         '''
@@ -45,21 +46,19 @@ class Model(nn.Module):
         x = torch.tensor(x, dtype=torch.float32)
         x = self.pool(self.activation(self.conv1(x)))
         x = self.pool(self.activation(self.conv2(x)))
-        x = self.activation(self.conv3(x))
+        x = self.pool(self.activation(self.conv3(x)))
+        # print("state shape={0}".format(x.shape))
         
         # Linear Layers
-        # print("state shape={0}".format(x.shape)) #(32,64,8,8) or (1,64,8,8)
         x = torch.flatten(x,start_dim=1)
         x = self.activation(self.linear1(x))
         x = self.activation(self.linear2(x))
-        y = self.linear3(x)
-        # print("y"); print(y.shape) # (32,5)
-        return y
+        return self.linear3(x)
     
     def loss(self, y_hat, y):
-        fn = nn.CrossEntropyLoss()
+        # fn = nn.CrossEntropyLoss()
         y = y.long()
-        return fn(y_hat, y)
+        return self.loss_function(y_hat, y)
     
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr = self.lr, weight_decay = 0.001)
@@ -103,3 +102,4 @@ class Model(nn.Module):
         # evaluation against test set
         print("Test Score: ", self.score_function(predictions_test, dataset.y_test, self.num_classes))
         print(classification_report(dataset.y_test, predictions_test, digits=3))
+        plot_confusion_matrix(dataset.y_test, predictions_test, dataset.classes, normalize=True)

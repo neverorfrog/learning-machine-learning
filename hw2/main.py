@@ -10,14 +10,15 @@ from training_utils import *
 torch.manual_seed(2000)
 
 car_env = CarEnv()
-dataset = Dataset(load = False)
+dataset = Dataset(load = True)
 dataset.summarize()
-loss_function = nn.CrossEntropyLoss(dataset.class_weights())
+class_weights = dataset.class_weights() # inverse to how frequent the class is
+loss_function = nn.CrossEntropyLoss(weight=class_weights)
 
-model = Model(name="770", num_classes = 5, loss_function = loss_function, score_function = accuracy, lr=0.0001)
-trainer = Trainer(max_epochs = 50, batch_size = 256)
-# trainer.fit(model, dataset, plot = False)
-model.load()
+model = Model(name="new", num_classes = 5, loss_function = loss_function, score_function = accuracy, lr=0.0001)
+trainer = Trainer(max_epochs = 10, batch_size = 64)
+trainer.fit(model, dataset, plot = False)
+# model.load()
 model.evaluate(dataset)
 
 car_env.play(model)
