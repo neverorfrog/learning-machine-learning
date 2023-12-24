@@ -135,18 +135,18 @@ class Dataset():
     
     def save(self):
         path = os.path.join("data","tensors")
-        torch.save(self.X_train, open(os.path.join(path,"X_train.pt"), "wb"))
-        torch.save(self.y_train, open(os.path.join(path,"y_train.pt"), "wb"))
-        torch.save(self.X_test, open(os.path.join(path,"X_test.pt"), "wb"))
-        torch.save(self.y_test, open(os.path.join(path,"y_test.pt"), "wb"))
+        torch.save(self.X_train, open(os.path.join(path,"X_train.dat"), "wb"))
+        torch.save(self.y_train, open(os.path.join(path,"y_train.dat"), "wb"))
+        torch.save(self.X_test, open(os.path.join(path,"X_test.dat"), "wb"))
+        torch.save(self.y_test, open(os.path.join(path,"y_test.dat"), "wb"))
         print("DATA SAVED!")
 
     def load(self):
         path = os.path.join("data","tensors")
-        self.X_train = torch.load(open(os.path.join(path,"X_train.pt"),"rb"))
-        self.y_train = torch.load(open(os.path.join(path,"y_train.pt"),"rb"))
-        self.X_test = torch.load(open(os.path.join(path,"X_test.pt"),"rb"))
-        self.y_test = torch.load(open(os.path.join(path,"y_test.pt"),"rb"))
+        self.X_train = torch.load(open(os.path.join(path,"X_train.dat"),"rb"))
+        self.y_train = torch.load(open(os.path.join(path,"y_train.dat"),"rb"))
+        self.X_test = torch.load(open(os.path.join(path,"X_test.dat"),"rb"))
+        self.y_test = torch.load(open(os.path.join(path,"y_test.dat"),"rb"))
         print("DATA LOADED!\n")  
         
     def split_by_labels(self, zero=[0,3,4], one=[1,2]):
