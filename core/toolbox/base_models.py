@@ -59,7 +59,6 @@ class Classifier(Module):
         return compare.mean() if averaged else compare # fraction of ones wrt the whole matrix
 
 class SimpleNetwork(Classifier):
-    
     def __init__(self, dimensions, loss = CrossEntropyLoss()):
         super().__init__()
         self.save_hyperparameters()

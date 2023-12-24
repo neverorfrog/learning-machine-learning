@@ -1,8 +1,19 @@
+import inspect
 from matplotlib import pyplot as plt
 import torch
 import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.discriminant_analysis import unique_labels
+
+class Parameters:
+    def save_parameters(self, ignore=[]):
+        """Save function arguments into class attributes"""
+        frame = inspect.currentframe().f_back
+        _, _, _, local_vars = inspect.getargvalues(frame)
+        self.hparams = {k:v for k, v in local_vars.items()
+                        if k not in set(ignore+['self']) and not k.startswith('_')}
+        for k, v in self.hparams.items():
+            setattr(self, k, v)
 
 def softmax(z, dim):
     '''

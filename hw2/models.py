@@ -3,82 +3,20 @@ from sklearn.metrics import classification_report, confusion_matrix
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from training_utils import accuracy, plot_confusion_matrix
+from training_utils import Parameters, accuracy, plot_confusion_matrix
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class Model(nn.Module):
-    def __init__(self,name, num_classes, loss_function, score_function = accuracy, lr = 0.001, bias=True):
+
+class Classifier(nn.Module, Parameters):
+    """The base class of models. Not instantiable because forward inference has to be defined by subclasses."""
+    def __init__(self, name, num_classes, score_function=accuracy, bias=True):
         super().__init__()
-        #Convolutional Layers (take as input the image)
-        self.conv1 = nn.Conv2d(3,32,kernel_size=7,padding=1,stride = 3, bias=bias,device=device)
-        self.conv2 = nn.Conv2d(32,64,kernel_size=5,padding=1,stride = 2, bias=bias, device=device)
-        self.conv3 = nn.Conv2d(64,64,kernel_size=3,padding=1,stride = 1, bias=bias, device=device)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.save_parameters() #saves as class fields the parameters of the constructor
 
-        #Linear layers
-        self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(64,32,bias=bias)
-        self.linear2 = nn.Linear(32,16,bias=bias)
-        self.linear3 = nn.Linear(16,num_classes,bias=bias)
-        
-        #Normalization layers
-        self.bn1 = nn.BatchNorm2d(16)
-        self.bn2 = nn.BatchNorm2d(32)
-        
-        #Max-pooling layers
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        
-        self.device = device
-        self.lr = lr
-        self.name = name
-        self.score_function = score_function
-        self.num_classes = num_classes
-        self.loss_function = loss_function
-
-    def forward(self, x):
-        '''
-        Input:
-            An image (already preprocessed)
-        Output:
-            Class of that image
-        '''
-        # Convolutions
-        x = torch.tensor(x, dtype=torch.float32)
-        x = self.pool(self.activation(self.conv1(x)))
-        x = self.pool(self.activation(self.conv2(x)))
-        x = self.pool(self.activation(self.conv3(x)))
-        # print("state shape={0}".format(x.shape))
-        
-        # Linear Layers
-        x = torch.flatten(x,start_dim=1)
-        x = self.activation(self.linear1(x))
-        x = self.activation(self.linear2(x))
-        return self.linear3(x)
-    
-    def loss(self, y_hat, y):
-        # fn = nn.CrossEntropyLoss()
-        y = y.long()
-        return self.loss_function(y_hat, y)
-    
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr = self.lr, weight_decay = 0.001)
-    
-    def training_step(self,inputs,labels,plot = True): #forward propagation
-        logits = self(inputs) #shape = (m, num_classes)
-        loss = self.loss(logits, labels)
-        if plot:
-            self.trainer.plot('loss', loss, self.device, train = True)
-        return loss
-    
-    def testing_step(self,inputs,labels,plot = True):
-        with torch.no_grad():
-            logits = self(inputs)
-            loss = self.loss(logits, labels)
-            predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(labels.dtype) # the most probable class is the one with highest probability
-            score = self.score_function(predictions,labels,self.num_classes)
-        if plot:
-            self.trainer.plot('loss', loss, self.device, train = False)
-        return loss, score
+    def forward(self, X):
+        pass
 
     def predict(self, X):
         return self(X).argmax(axis = 1).squeeze() #shape = (m)
@@ -89,8 +27,8 @@ class Model(nn.Module):
         torch.save(self.state_dict(), open(os.path.join(path,"model.pt"), "wb"))
         # print("MODELS SAVED!")
 
-    def load(self):
-        path = os.path.join("models",self.name)
+    def load(self, name):
+        path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
         # print("MODELS LOADED!")
         
@@ -103,3 +41,58 @@ class Model(nn.Module):
         print("Test Score: ", self.score_function(predictions_test, dataset.y_test, self.num_classes))
         print(classification_report(dataset.y_test, predictions_test, digits=3))
         plot_confusion_matrix(dataset.y_test, predictions_test, dataset.classes, normalize=True)
+    
+
+class CNN(Classifier):
+    def __init__(self, name, num_classes, bias=True):
+        super().__init__(name, num_classes, bias=True)
+        
+        #Channels
+        self.channels0 = 3
+        self.channels1 = 4
+        self.channels2 = 8
+        self.channels3 = 16
+        self.channels4 = 32
+        
+        #Convolutional Layers (take as input the image)
+        self.conv1 = nn.Conv2d(self.channels0, self.channels1, kernel_size=3, padding=1, bias=bias, device=device)
+        self.conv2 = nn.Conv2d(self.channels1, self.channels2, kernel_size=3, padding=1, bias=bias, device=device)
+        self.conv3 = nn.Conv2d(self.channels2, self.channels3, kernel_size=3, padding=1, bias=bias, device=device)
+        self.conv4 = nn.Conv2d(self.channels3, self.channels4, kernel_size=3, padding=1, bias=bias, device=device)
+        
+        
+        #Linear layers
+        self.activation = nn.ReLU()
+        self.linear1 = nn.Linear(self.channels4*6*6,512,bias=bias)
+        self.linear2 = nn.Linear(512,num_classes,bias=bias)
+        
+        #Max-pooling layers
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        
+        #batch normalization layers
+        self.batch_norm1 = nn.BatchNorm2d(self.channels1)
+        self.batch_norm2 = nn.BatchNorm2d(self.channels2)
+        self.batch_norm3 = nn.BatchNorm2d(self.channels3)
+        self.batch_norm4 = nn.BatchNorm2d(self.channels4)
+        
+
+    def forward(self, x):
+        '''
+        Input:
+            An image (already preprocessed)
+        Output:
+            Class of that image
+        '''
+        # Convolutions
+        x = torch.tensor(x, dtype=torch.float32)
+        x = self.batch_norm1(self.pool(self.activation(self.conv1(x))))
+        x = self.batch_norm2(self.pool(self.activation(self.conv2(x))))
+        x = self.batch_norm3(self.pool(self.activation(self.conv3(x))))
+        x = self.batch_norm4(self.pool(self.activation(self.conv4(x))))
+        
+        # print("state shape={0}".format(x.shape))
+        
+        # Linear Layers
+        x = torch.flatten(x,start_dim=1)
+        x = self.activation(self.linear1(x))
+        return self.linear2(x)
