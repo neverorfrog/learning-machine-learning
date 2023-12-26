@@ -70,7 +70,7 @@ class Dataset():
         labels = torch.tensor(data[-1], dtype=torch.int32)
         class_weights = params['train_class_weights'] if train else params['test_class_weights']
         weights = [class_weights[label] for label in labels]
-        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=train)
+        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
         
         return DataLoader(
             dataset = TensorDataset(*data),
@@ -78,7 +78,9 @@ class Dataset():
             sampler = weighted_sampler,
             collate_fn = lambda x: (
                 torch.stack([transform(item[0]) for item in x]),
-                torch.tensor([item[1] for item in x]))
+                torch.tensor([item[1] for item in x])
+            ),
+            num_workers=4
         )
      
     def summarize(self, train = True):

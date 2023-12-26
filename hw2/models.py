@@ -35,21 +35,18 @@ class CNN(Classifier):
         
         #Channels
         self.channels0 = 3
-        self.channels1 = 4
-        self.channels2 = 8
-        self.channels3 = 16
-        self.channels4 = 32
+        self.channels1 = 32
+        self.channels2 = 64
+        # self.channels3 = 64
         
         #Convolutional Layers (take as input the image)
-        self.conv1 = nn.Conv2d(self.channels0, self.channels1, kernel_size=3, padding=1, bias=bias, device=device)
-        self.conv2 = nn.Conv2d(self.channels1, self.channels2, kernel_size=3, padding=1, bias=bias, device=device)
-        self.conv3 = nn.Conv2d(self.channels2, self.channels3, kernel_size=3, padding=1, bias=bias, device=device)
-        self.conv4 = nn.Conv2d(self.channels3, self.channels4, kernel_size=3, padding=1, bias=bias, device=device)
-        
+        self.conv1 = nn.Conv2d(self.channels0, self.channels1, kernel_size=7, padding=1, stride=3, device=device)
+        self.conv2 = nn.Conv2d(self.channels1, self.channels2, kernel_size=5, padding=1, stride=2, device=device)
+        # self.conv3 = nn.Conv2d(self.channels2, self.channels3, kernel_size=3, padding=1, stride=1, device=device)
         
         #Linear layers
         self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(self.channels4*6*6,512,bias=bias)
+        self.linear1 = nn.Linear(self.channels2*3*3,512,bias=bias)
         self.linear2 = nn.Linear(512,num_classes,bias=bias)
         
         #Max-pooling layers
@@ -58,9 +55,10 @@ class CNN(Classifier):
         #batch normalization layers
         self.batch_norm1 = nn.BatchNorm2d(self.channels1)
         self.batch_norm2 = nn.BatchNorm2d(self.channels2)
-        self.batch_norm3 = nn.BatchNorm2d(self.channels3)
-        self.batch_norm4 = nn.BatchNorm2d(self.channels4)
-        
+        # self.batch_norm3 = nn.BatchNorm2d(self.channels3)
+
+        #dropout
+        self.dropout = nn.Dropout(p=0.5)  # p is the probability of dropout
 
     def forward(self, x):
         '''
@@ -73,12 +71,11 @@ class CNN(Classifier):
         x = torch.tensor(x, dtype=torch.float32)
         x = self.batch_norm1(self.pool(self.activation(self.conv1(x))))
         x = self.batch_norm2(self.pool(self.activation(self.conv2(x))))
-        x = self.batch_norm3(self.pool(self.activation(self.conv3(x))))
-        x = self.batch_norm4(self.pool(self.activation(self.conv4(x))))
-        
-        # print("state shape={0}".format(x.shape))
+        # print("state shape={0}".format(x.shape))      
+        # x = self.batch_norm3(self.pool(self.activation(self.conv3(x))))
         
         # Linear Layers
         x = torch.flatten(x,start_dim=1)
         x = self.activation(self.linear1(x))
+        x = self.dropout(x)
         return self.linear2(x)
