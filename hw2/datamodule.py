@@ -2,10 +2,11 @@ import numpy as np
 import torch
 import os
 import pandas as pd
-from image_utils import *
-from training_utils import compute_class_weights
-from torch.utils.data import DataLoader, WeightedRandomSampler, TensorDataset
-from torchvision import transforms
+from training_utils import *
+from torch.utils.data import DataLoader, TensorDataset
+from torchvision import io
+from config import DATA_PARAMS as params
+from torch.utils.data import WeightedRandomSampler
 
 class Dataset():
     """
@@ -13,11 +14,6 @@ class Dataset():
     """
     def __init__(self, load=False, X_train=None, y_train=None, X_test=None, y_test=None):
         #initializaing from folders of images
-        self.transform = transforms.Compose([
-            transforms.ToPILImage(),
-            random_color_jitter(),
-            transforms.ToTensor()
-        ])
         if load is False:
             self.dataframe_train = self.create_dataframe("data", train = True)
             self.dataframe_test = self.create_dataframe("data", train = False)
@@ -32,8 +28,6 @@ class Dataset():
             self.y_train = y_train
             self.X_test = X_test
             self.y_test = y_test
-            
-        # assert(self.X_train)
             
         self.classes = np.unique(self.y_train)
         self.num_features = self.X_train.shape[1]
@@ -57,8 +51,7 @@ class Dataset():
             if os.path.isdir(label_folder):
                 for image_file in os.listdir(label_folder):
                     image_path = os.path.join(label_folder, image_file)
-                    # All labels                          
-                    data.append(process_image(image_path, self.transform))
+                    data.append(io.read_image(image_path))
                     labels.append(label)
                 
         df = pd.DataFrame({'Image': data, 'Label': labels})
@@ -73,16 +66,18 @@ class Dataset():
     def get_dataloader(self, train, batch_size):
         """Yields a minibatch of data at each next(iter(dataloader))"""
         data = self.train_data if train else self.test_data
+        transform = params['train_transform'] if train else params['test_transform']
         labels = torch.tensor(data[-1], dtype=torch.int32)
-        weights = [self.class_weights(labels)[label] for label in labels]
-        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+        class_weights = params['train_class_weights'] if train else params['test_class_weights']
+        weights = [class_weights[label] for label in labels]
+        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=train)
+        
         return DataLoader(
             dataset = TensorDataset(*data),
             batch_size = batch_size,
             sampler = weighted_sampler,
-            # shuffle = train,
             collate_fn = lambda x: (
-                torch.stack([self.transform(item[0]) for item in x]),
+                torch.stack([transform(item[0]) for item in x]),
                 torch.tensor([item[1] for item in x]))
         )
      
@@ -114,9 +109,10 @@ class Dataset():
         headers = dataframe.columns # 'x' for inputs, 'y' for labels
         #Inputs array
         images = dataframe[headers[0]] #this is a list
+        
         #Features array
         X = torch.vstack([images[i].unsqueeze(0) for i in range(len(images))]) 
-                       
+        
         #Labels array
         if len(headers)>1:
             labels = dataframe[headers[1]]
@@ -128,10 +124,6 @@ class Dataset():
         
     def head(self):
         print(self.X[0])
-        
-    def class_weights(self, labels):
-        class_weights = compute_class_weights(labels)
-        return torch.tensor(class_weights, dtype=torch.float32)
     
     def save(self):
         path = os.path.join("data","tensors")

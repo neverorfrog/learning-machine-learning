@@ -1,16 +1,12 @@
 import os
-from sklearn.metrics import classification_report, confusion_matrix
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from training_utils import Parameters, accuracy, plot_confusion_matrix
-
+from training_utils import Parameters
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 class Classifier(nn.Module, Parameters):
     """The base class of models. Not instantiable because forward inference has to be defined by subclasses."""
-    def __init__(self, name, num_classes, score_function=accuracy, bias=True):
+    def __init__(self, name, num_classes, bias=True):
         super().__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_parameters() #saves as class fields the parameters of the constructor
@@ -31,16 +27,6 @@ class Classifier(nn.Module, Parameters):
         path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
         # print("MODELS LOADED!")
-        
-    def evaluate(self, dataset):
-        predictions_train = self.predict(dataset.X_train)
-        predictions_test = self.predict(dataset.X_test)
-        # evaluation against training set
-        print("Train Score: ", self.score_function(predictions_train, dataset.y_train, self.num_classes))
-        # evaluation against test set
-        print("Test Score: ", self.score_function(predictions_test, dataset.y_test, self.num_classes))
-        print(classification_report(dataset.y_test, predictions_test, digits=3))
-        plot_confusion_matrix(dataset.y_test, predictions_test, dataset.classes, normalize=True)
     
 
 class CNN(Classifier):
