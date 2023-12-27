@@ -77,7 +77,7 @@ class Dataset():
         class_weights = params['train_class_weights'] if train else params['val_class_weights']
         weights = [class_weights[label] for label in labels]
         weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
-        if params['use_weighted_sampler'] == True:
+        if params['use_weighted_sampler'] is True:
             return DataLoader(
                 dataset = TensorDataset(*data),
                 batch_size = batch_size,

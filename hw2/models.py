@@ -34,7 +34,7 @@ class CNN(Classifier):
     def __init__(self, name, num_classes, bias=True):
         super().__init__(name, num_classes, bias=True)
         
-        self.activation = nn.ReLU()
+        self.activation = nn.LeakyReLU()
         
         #Convolutional Layers (take as input the image)
         channels = params['channels']
@@ -42,7 +42,7 @@ class CNN(Classifier):
         strides = params['strides']
         self.conv1 = nn.Conv2d(3, channels[0], kernel_size=kernels[0], stride=strides[0], device=device)
         self.conv2 = nn.Conv2d(channels[0], channels[1], kernel_size=kernels[1], stride=strides[1], device=device)
-        self.conv3 = nn.Conv2d(channels[1], channels[2], kernel_size=kernels[2], stride=strides[2], device=device)
+        # self.conv3 = nn.Conv2d(channels[1], channels[2], kernel_size=kernels[2], stride=strides[2], device=device)
         
         #Linear layers
         self.linear1 = nn.Linear(channels[-1]*6*6,512,bias=bias)
@@ -53,15 +53,15 @@ class CNN(Classifier):
         pool_strides = params['pool_strides']
         self.pool1 = nn.MaxPool2d(kernel_size=pool_kernels[0], stride=pool_strides[0])
         self.pool2 = nn.MaxPool2d(kernel_size=pool_kernels[1], stride=pool_strides[1])
-        self.pool3 = nn.MaxPool2d(kernel_size=pool_kernels[2], stride=pool_strides[2])
+        # self.pool3 = nn.MaxPool2d(kernel_size=pool_kernels[2], stride=pool_strides[2])
         
         #batch normalization layers
         self.batch_norm1 = nn.BatchNorm2d(channels[0])
         self.batch_norm2 = nn.BatchNorm2d(channels[1])
-        self.batch_norm3 = nn.BatchNorm2d(channels[2])
+        # self.batch_norm3 = nn.BatchNorm2d(channels[2])
 
         #dropout
-        self.dropout = nn.Dropout(p=0.2)  # p is the probability of dropout
+        self.dropout = nn.Dropout(p=0.4)  # p is the probability of dropout
 
     def forward(self, x):
         '''
