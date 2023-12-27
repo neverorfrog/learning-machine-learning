@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.model_selection import train_test_split
 import torch
 import os
 import pandas as pd
@@ -19,9 +20,13 @@ class Dataset():
             self.dataframe_test = self.create_dataframe("data", train = False)
             self.X_train, self.y_train = self.extract_tensors(self.dataframe_train)
             self.X_test, self.y_test = self.extract_tensors(self.dataframe_test)
+            self.classes = np.unique(self.y_train)
+            self.upsampling()
+            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(self.X_train, self.y_train, test_size=0.25)
             self.save()
         elif load is True:
             self.load()
+            self.classes = np.unique(self.y_train)
             
         if X_train is not None and y_train is not None:
             self.X_train = X_train
@@ -29,11 +34,12 @@ class Dataset():
             self.X_test = X_test
             self.y_test = y_test
             
-        self.classes = np.unique(self.y_train)
         self.num_features = self.X_train.shape[1]
-        self.num_train = len(self.y_train); self.num_test = len(self.y_test)
+        self.num_train = len(self.y_train)
+        self.num_test = len(self.y_test)
         self.train_data = tuple([self.X_train, self.y_train])
         self.test_data = tuple([self.X_test, self.y_test])
+        self.val_data = tuple([self.X_val, self.y_val])
         self.num_classes = len(self.classes)
     
     def create_dataframe(self,path,train):
@@ -60,31 +66,42 @@ class Dataset():
     def train_dataloader(self, batch_size):
         return self.get_dataloader(True, batch_size)
 
-    def test_dataloader(self, batch_size):
+    def val_dataloader(self, batch_size):
         return self.get_dataloader(False, batch_size)
     
     def get_dataloader(self, train, batch_size):
         """Yields a minibatch of data at each next(iter(dataloader))"""
-        data = self.train_data if train else self.test_data
-        transform = params['train_transform'] if train else params['test_transform']
+        data = self.train_data if train else self.val_data
+        transform = params['train_transform'] if train else params['val_transform']
         labels = torch.tensor(data[-1], dtype=torch.int32)
-        class_weights = params['train_class_weights'] if train else params['test_class_weights']
+        class_weights = params['train_class_weights'] if train else params['val_class_weights']
         weights = [class_weights[label] for label in labels]
         weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
-        
-        return DataLoader(
-            dataset = TensorDataset(*data),
-            batch_size = batch_size,
-            sampler = weighted_sampler,
-            collate_fn = lambda x: (
-                torch.stack([transform(item[0]) for item in x]),
-                torch.tensor([item[1] for item in x])
-            ),
-            num_workers=4
-        )
+        if params['use_weighted_sampler'] == True:
+            return DataLoader(
+                dataset = TensorDataset(*data),
+                batch_size = batch_size,
+                sampler = weighted_sampler,
+                collate_fn = lambda x: (
+                    torch.stack([transform(item[0]) for item in x]),
+                    torch.tensor([item[1] for item in x])
+                ),
+                num_workers=4
+            )
+        else:
+            return DataLoader(
+                dataset = TensorDataset(*data),
+                batch_size = batch_size,
+                shuffle=True,
+                collate_fn = lambda x: (
+                    torch.stack([transform(item[0]) for item in x]),
+                    torch.tensor([item[1] for item in x])
+                ),
+                num_workers=4
+            )
+            
      
     def summarize(self, train = True):
-        
         inputs = self.X_train if train is True else self.X_test
         labels = self.y_train if train is True else self.y_test
         
@@ -131,6 +148,8 @@ class Dataset():
         path = os.path.join("data","tensors")
         torch.save(self.X_train, open(os.path.join(path,"X_train.dat"), "wb"))
         torch.save(self.y_train, open(os.path.join(path,"y_train.dat"), "wb"))
+        torch.save(self.X_val, open(os.path.join(path,"X_val.dat"), "wb"))
+        torch.save(self.y_val, open(os.path.join(path,"y_val.dat"), "wb"))
         torch.save(self.X_test, open(os.path.join(path,"X_test.dat"), "wb"))
         torch.save(self.y_test, open(os.path.join(path,"y_test.dat"), "wb"))
         print("DATA SAVED!")
@@ -139,17 +158,34 @@ class Dataset():
         path = os.path.join("data","tensors")
         self.X_train = torch.load(open(os.path.join(path,"X_train.dat"),"rb"))
         self.y_train = torch.load(open(os.path.join(path,"y_train.dat"),"rb"))
+        self.X_val = torch.load(open(os.path.join(path,"X_val.dat"),"rb"))
+        self.y_val = torch.load(open(os.path.join(path,"y_val.dat"),"rb"))
         self.X_test = torch.load(open(os.path.join(path,"X_test.dat"),"rb"))
         self.y_test = torch.load(open(os.path.join(path,"y_test.dat"),"rb"))
         print("DATA LOADED!\n")  
         
-    def split_by_labels(self, zero=[0,3,4], one=[1,2]):
-        """
-        Params zero and one are labels (arrays) corresponding to the two classes
-        """
-        new_y_train = torch.tensor([0 if self.y_train[j] in zero else 1 for j in range(len(self.y_train))])
-        new_y_test = torch.tensor([0 if self.y_test[j] in zero else 1 for j in range(len(self.y_test))])
-        
-        return Dataset(load = None, X_train = self.X_train, y_train = new_y_train, X_test = self.X_test, y_test = new_y_test)
-        
-        
+    def upsampling(self):
+        min_size = params['min_size_per_class']
+        transform = params['train_transform']
+        for label in self.classes:
+            count = torch.sum(self.y_train == label).item()
+            if count < min_size:
+                difference = min_size - count
+                inputs = self.extract_by_label(label)
+                samples = [random.randint(0, count-1) for _ in range(difference)]
+                upsampled_inputs = torch.vstack([inputs[samples[j]].unsqueeze(0) for j in range(difference)])
+                upsampled_labels = torch.zeros(size=[difference]) + label
+                self.X_train = torch.vstack([self.X_train, upsampled_inputs])
+                self.y_train = torch.cat([self.y_train, upsampled_labels])
+       
+    def extract_by_label(self, label):
+        class_mask = (self.y_train == label)
+        return self.X_train[class_mask,:]
+    
+    def highest_label_count(self):
+        highest_count = 0
+        for label in self.classes:
+            count = torch.sum(self.y_train == label).item()
+            if count > highest_count:
+                highest_count = count
+        return highest_count

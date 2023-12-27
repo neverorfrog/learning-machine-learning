@@ -49,13 +49,13 @@ class Trainer(Parameters):
         
         #stuff for dataset
         train_dataloader = self.data.train_dataloader(batch_size)
-        test_dataloader = self.data.test_dataloader(batch_size)
+        val_dataloader = self.data.val_dataloader(batch_size)
         self.num_train_batches = len(train_dataloader)
-        self.num_test_batches = (len(test_dataloader) if test_dataloader is not None else 0)
+        self.num_val_batches = (len(val_dataloader) if val_dataloader is not None else 0)
         
         # stuff for iterations
         train_batch_idx = 0
-        test_batch_idx = 0
+        val_batch_idx = 0
         
         #stuff for early stopping
         early_stopping = False
@@ -81,12 +81,12 @@ class Trainer(Parameters):
                     loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
                     optim.step() 
                     
-            #Testing
+            #Validation
             self.model.eval()
             scores = []            
             losses = []
-            for batch in test_dataloader:
-                test_batch_idx += 1
+            for batch in val_dataloader:
+                val_batch_idx += 1
                 #Forward propagation
                 loss, score = self.compute_loss(batch, train = False)
                 if plot:
@@ -119,6 +119,6 @@ class Trainer(Parameters):
                 n = self.num_train_batches
             else:
                 x = epoch + 1
-                n = self.num_test_batches 
+                n = self.num_val_batches 
             self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n = int(n))
             

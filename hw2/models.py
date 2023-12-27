@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from training_utils import Parameters
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from config import MODEL_PARAMS as params
 
 class Classifier(nn.Module, Parameters):
     """The base class of models. Not instantiable because forward inference has to be defined by subclasses."""
@@ -33,32 +34,34 @@ class CNN(Classifier):
     def __init__(self, name, num_classes, bias=True):
         super().__init__(name, num_classes, bias=True)
         
-        #Channels
-        self.channels0 = 3
-        self.channels1 = 32
-        self.channels2 = 64
-        # self.channels3 = 64
+        self.activation = nn.ReLU()
         
         #Convolutional Layers (take as input the image)
-        self.conv1 = nn.Conv2d(self.channels0, self.channels1, kernel_size=7, padding=1, stride=3, device=device)
-        self.conv2 = nn.Conv2d(self.channels1, self.channels2, kernel_size=5, padding=1, stride=2, device=device)
-        # self.conv3 = nn.Conv2d(self.channels2, self.channels3, kernel_size=3, padding=1, stride=1, device=device)
+        channels = params['channels']
+        kernels = params['kernels']
+        strides = params['strides']
+        self.conv1 = nn.Conv2d(3, channels[0], kernel_size=kernels[0], stride=strides[0], device=device)
+        self.conv2 = nn.Conv2d(channels[0], channels[1], kernel_size=kernels[1], stride=strides[1], device=device)
+        self.conv3 = nn.Conv2d(channels[1], channels[2], kernel_size=kernels[2], stride=strides[2], device=device)
         
         #Linear layers
-        self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(self.channels2*3*3,512,bias=bias)
+        self.linear1 = nn.Linear(channels[-1]*6*6,512,bias=bias)
         self.linear2 = nn.Linear(512,num_classes,bias=bias)
         
         #Max-pooling layers
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        pool_kernels = params['pool_kernels']
+        pool_strides = params['pool_strides']
+        self.pool1 = nn.MaxPool2d(kernel_size=pool_kernels[0], stride=pool_strides[0])
+        self.pool2 = nn.MaxPool2d(kernel_size=pool_kernels[1], stride=pool_strides[1])
+        self.pool3 = nn.MaxPool2d(kernel_size=pool_kernels[2], stride=pool_strides[2])
         
         #batch normalization layers
-        self.batch_norm1 = nn.BatchNorm2d(self.channels1)
-        self.batch_norm2 = nn.BatchNorm2d(self.channels2)
-        # self.batch_norm3 = nn.BatchNorm2d(self.channels3)
+        self.batch_norm1 = nn.BatchNorm2d(channels[0])
+        self.batch_norm2 = nn.BatchNorm2d(channels[1])
+        self.batch_norm3 = nn.BatchNorm2d(channels[2])
 
         #dropout
-        self.dropout = nn.Dropout(p=0.5)  # p is the probability of dropout
+        self.dropout = nn.Dropout(p=0.2)  # p is the probability of dropout
 
     def forward(self, x):
         '''
@@ -69,10 +72,10 @@ class CNN(Classifier):
         '''
         # Convolutions
         x = torch.tensor(x, dtype=torch.float32)
-        x = self.batch_norm1(self.pool(self.activation(self.conv1(x))))
-        x = self.batch_norm2(self.pool(self.activation(self.conv2(x))))
-        # print("state shape={0}".format(x.shape))      
-        # x = self.batch_norm3(self.pool(self.activation(self.conv3(x))))
+        x = self.activation(self.batch_norm1(self.pool1(self.conv1(x))))
+        x = self.activation(self.batch_norm2(self.pool2(self.conv2(x))))
+        # x = self.batch_norm3(self.pool3(self.activation(self.conv3(x))))
+        # print("state shape={0}".format(x.shape))
         
         # Linear Layers
         x = torch.flatten(x,start_dim=1)
