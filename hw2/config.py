@@ -13,10 +13,10 @@ DATA_PARAMS = {
     'train_class_weights': torch.tensor([1,1.5,1.5,2,0.3], dtype=torch.float32),
     'val_class_weights': torch.tensor([1,1,1,1,1], dtype=torch.float32),
     'train_transform': transforms.Compose([
-        transforms.RandomInvert(),
-        transforms.RandomAutocontrast(),
         random_color_jitter(),
-        transforms.RandomRotation(degrees=45)]),
+        transforms.RandomRotation(degrees=45),
+        transforms.RandomAutocontrast()
+    ]),
     'val_split_size': 0.2,
     'min_size_per_class': 1000
 }

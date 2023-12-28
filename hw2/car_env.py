@@ -39,5 +39,5 @@ class CarEnv():
             total_reward += reward
             
         print(total_reward)
-        print(truncated)
+        print(terminated)
         

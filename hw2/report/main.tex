@@ -16,9 +16,9 @@
 
 % --------------------------------------------- %
 
-\title{Homework 1}	                                    % Title
-\author{Flavio Maiorana 2051396}				                % Authors separated by \\
-\date{\today}								    % Date
+\title{Homework 2}	                                    % Title
+\author{Flavio Maiorana 2051396}				        % Authors separated by \\
+\date{\today}								            % Date
 
 \makeatletter
 \let\thetitle\@title
@@ -40,43 +40,18 @@ it even before "cranking up" the learning algorithm.
 First of all, it could be useful to gain some insight one how the dataaset is
 made.
 
-\begin{verbatim}[Dataset 1]
-    N Examples: 50000
-    N Inputs: 100
-    N Classes: 10 [0 1 2 3 4 5 6 7 8 9]
-     - Class 0: 5000 (10.0)
-     - Class 1: 5000 (10.0)
-     - Class 2: 5000 (10.0)
-     - Class 3: 5000 (10.0)
-     - Class 4: 5000 (10.0)
-     - Class 5: 5000 (10.0)
-     - Class 6: 5000 (10.0)
-     - Class 7: 5000 (10.0)
-     - Class 8: 5000 (10.0)
-     - Class 9: 5000 (10.0)
+\begin{verbatim}[Dataset for Training]
+    N Examples: 6369
+    N Classes: 5
+    Classes: [0 1 2 3 4]
+    - Class 0: 1000 (15.701051970482022)
+    - Class 1: 1500 (23.551577955723033)
+    - Class 2: 1500 (23.551577955723033)
+    - Class 3: 2000 (31.402103940964043)
+    - Class 4: 369 (5.7936881771078665)
 \end{verbatim}
 
-\begin{verbatim}[Dataset 2]
-    N Examples: 50000
-    N Inputs: 1000
-    N Classes: 10 [0 1 2 3 4 5 6 7 8 9]
-     - Class 0: 5000 (10.0)
-     - Class 1: 5000 (10.0)
-     - Class 2: 5000 (10.0)
-     - Class 3: 5000 (10.0)
-     - Class 4: 5000 (10.0)
-     - Class 5: 5000 (10.0)
-     - Class 6: 5000 (10.0)
-     - Class 7: 5000 (10.0)
-     - Class 8: 5000 (10.0)
-     - Class 9: 5000 (10.0)
-\end{verbatim}
-
-Some comments: both datasets have examples pertaining 10 different Classes, The
-number of examples is pretty high and Both datasets are perfectly balanced.
-
-
-COAAPIHFPIAOSFP
+Some comments: the dataset is highly imbalanced
 
 \begin{figure}[H]
     \includegraphics{figures/dataset1.png}

@@ -22,12 +22,12 @@ class Classifier(nn.Module, Parameters):
         path = os.path.join("models",self.name)
         if not os.path.exists(path): os.mkdir(path)
         torch.save(self.state_dict(), open(os.path.join(path,"model.pt"), "wb"))
-        # print("MODELS SAVED!")
+        print("MODELS SAVED!")
 
     def load(self, name):
         path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
-        # print("MODELS LOADED!")
+        print("MODELS LOADED!")
     
 
 class CNN(Classifier):

@@ -105,10 +105,11 @@ class Trainer(Parameters):
             else:
                 best_loss = mean_loss
                 worse_epochs = 0
-                self.model.save()
             if worse_epochs == patience: 
                 early_stopping = True
                 print(f'Early stopping at epoch {epoch} due to no improvement.')
+                self.model.save()
+                
         
     
     def plot(self, key, value, device, train, epoch, train_batch_idx):
