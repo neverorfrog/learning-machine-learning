@@ -14,14 +14,14 @@ class Trainer(Parameters):
         self.save_parameters()
         
     def evaluate(self):
-        predictions_train = self.model.predict(self.data.X_train)
-        predictions_test = self.model.predict(self.data.X_test)
+        predictions_train = self.model.predict(self.data.train_data.samples)
+        predictions_test = self.model.predict(self.data.test_data.samples)
         # evaluation against training set
-        print("Train Score: ", self.score_function(predictions_train, self.data.y_train, self.model.num_classes))
+        print("Train Score: ", self.score_function(predictions_train, self.data.train_data.labels, self.model.num_classes))
         # evaluation against test set
-        print("Test Score: ", self.score_function(predictions_test, self.data.y_test, self.model.num_classes))
-        print(classification_report(self.data.y_test, predictions_test, digits=3))
-        plot_confusion_matrix(self.data.y_test, predictions_test, self.data.classes, normalize=True)
+        print("Test Score: ", self.score_function(predictions_test, self.data.test_data.labels, self.model.num_classes))
+        print(classification_report(self.data.test_data.labels, predictions_test, digits=3))
+        plot_confusion_matrix(self.data.test_data.labels, predictions_test, self.data.classes, normalize=True)
         
     def compute_loss(self,batch,train=True): #forward propagation
         inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
@@ -35,7 +35,7 @@ class Trainer(Parameters):
                 logits = self.model(inputs)
                 loss = self.loss_function(logits, labels)   
                 predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(labels.dtype) # the most probable class is the one with highest probability
-                score = self.score_function(predictions,labels,self.data.num_classes) 
+                score = self.score_function(predictions,labels,5) 
         return loss, score  
     
 

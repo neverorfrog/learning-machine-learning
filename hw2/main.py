@@ -10,7 +10,7 @@ torch.manual_seed(200)
 
 car_env = CarEnv()
 dataset = Dataset(load = False)
-# dataset.summarize(train = True)
+dataset.summarize(train = True)
 # print("\n")
 # dataset.summarize(train = False)
 

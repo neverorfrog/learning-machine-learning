@@ -15,9 +15,10 @@ DATA_PARAMS = {
     'train_transform': transforms.Compose([
         transforms.RandomInvert(),
         transforms.RandomAutocontrast(),
-        random_color_jitter()]),
-    'val_transform': transforms.Compose([]),
-    'min_size_per_class': 1600
+        random_color_jitter(),
+        transforms.RandomRotation(degrees=45)]),
+    'val_split_size': 0.2,
+    'min_size_per_class': 1000
 }
 
 TRAIN_PARAMS = {
@@ -27,8 +28,8 @@ TRAIN_PARAMS = {
     'patience': 5,
     'score_function': accuracy,
     'optim_function': torch.optim.Adam,
-    'weight_decay': 0.0001,
-    'loss_function': nn.CrossEntropyLoss(DATA_PARAMS['train_class_weights'])
+    'weight_decay': 0.001,
+    'loss_function': nn.CrossEntropyLoss()
 }
 
 MODEL_PARAMS = {
