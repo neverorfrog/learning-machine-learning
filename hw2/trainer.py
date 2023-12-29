@@ -27,9 +27,9 @@ class Trainer(Parameters):
         inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
         labels = batch[-1].type(torch.long)# labels -> shape = (m)
         logits = self.model(inputs)
-        l2_reg = sum(torch.norm(param) for param in self.model.parameters())
+        # l2_reg = sum(torch.norm(param) for param in self.model.parameters())
         loss = self.loss_function(logits, labels)
-        loss += params['weight_decay'] * l2_reg
+        # loss += params['weight_decay'] * l2_reg
         return loss
     
     def eval_step(self,batch):
@@ -108,7 +108,7 @@ class Trainer(Parameters):
             print(f"EPOCH {epoch} SCORE: {epoch_score:.3f} LOSS: {epoch_loss:.3f}")  
             
             # Early stopping mechanism     
-            if epoch_score < best_score or epoch_loss > best_loss:
+            if epoch_score < best_score and epoch_loss > best_loss:
                 worse_epochs += 1
             else:
                 self.model.save()

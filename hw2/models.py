@@ -22,13 +22,13 @@ class Classifier(nn.Module, Parameters):
         path = os.path.join("models",self.name)
         if not os.path.exists(path): os.mkdir(path)
         torch.save(self.state_dict(), open(os.path.join(path,"model.pt"), "wb"))
-        print("MODELS SAVED!")
+        print("MODEL SAVED!")
 
     def load(self, name):
         path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
         self.eval()
-        print("MODELS LOADED!")
+        print("MODEL LOADED!")
     
 
 class CNN(Classifier):
@@ -41,28 +41,25 @@ class CNN(Classifier):
         channels = params['channels']
         kernels = params['kernels']
         strides = params['strides']
-        self.conv1 = nn.Conv2d(3, channels[0], kernel_size=kernels[0], stride=strides[0], device=device)
-        self.conv2 = nn.Conv2d(channels[0], channels[1], kernel_size=kernels[1], stride=strides[1], device=device)
-        # self.conv3 = nn.Conv2d(channels[1], channels[2], kernel_size=kernels[2], stride=strides[2], device=device)
-        
-        #Linear layers
-        self.linear1 = nn.Linear(channels[-1]*9*9,512,bias=bias)
-        self.linear2 = nn.Linear(512,num_classes,bias=bias)
-        
-        #Max-pooling layers
         pool_kernels = params['pool_kernels']
         pool_strides = params['pool_strides']
-        self.pool1 = nn.MaxPool2d(kernel_size=pool_kernels[0], stride=pool_strides[0])
-        self.pool2 = nn.MaxPool2d(kernel_size=pool_kernels[1], stride=pool_strides[1])
-        # self.pool3 = nn.MaxPool2d(kernel_size=pool_kernels[2], stride=pool_strides[2])
         
-        #batch normalization layers
-        self.batch_norm1 = nn.BatchNorm2d(channels[0])
-        self.batch_norm2 = nn.BatchNorm2d(channels[1])
-        # self.batch_norm3 = nn.BatchNorm2d(channels[2])
+        conv_layers = []
+        for i in range(len(kernels)):
+            conv_layers.append(nn.Conv2d(channels[i], channels[i+1], kernel_size=kernels[i], stride=strides[i], device=device))
+            conv_layers.append(nn.MaxPool2d(kernel_size=pool_kernels[i], stride=pool_strides[i]))
+            conv_layers.append(nn.BatchNorm2d(channels[i+1]))
+            conv_layers.append(self.activation)
+        self.conv = nn.Sequential(*conv_layers) 
 
-        #dropout
-        self.dropout = nn.Dropout(params['dropout'])  # p is the probability of dropout
+        #Fully Connected layers
+        fc_dims = params['fc_dims']
+        fc_layers = []
+        for i in range(len(fc_dims)-1):
+            fc_layers.append(nn.Linear(fc_dims[i],fc_dims[i+1],bias=bias))
+            fc_layers.append(self.activation)
+            fc_layers.append(nn.Dropout(params['dropout']))
+        self.fc = nn.Sequential(*fc_layers)
 
     def forward(self, x):
         '''
@@ -73,13 +70,10 @@ class CNN(Classifier):
         '''
         # Convolutions
         x = torch.tensor(x, dtype=torch.float32)
-        x = self.activation(self.batch_norm1(self.pool1(self.conv1(x))))
-        x = self.activation(self.batch_norm2(self.pool2(self.conv2(x))))
-        # x = self.batch_norm3(self.pool3(self.activation(self.conv3(x))))
+        x = self.conv(x)
+        
         # print("state shape={0}".format(x.shape))
         
-        # Linear Layers
+        # Fully Connected Layers
         x = torch.flatten(x,start_dim=1)
-        x = self.activation(self.linear1(x))
-        x = self.dropout(x)
-        return self.linear2(x)
+        return self.fc(x)

@@ -8,6 +8,11 @@ def random_odd(start, end):
     number = random.randint(start, end)
     return number if number % 2 != 0 else number+1
 
+DOMAIN_PARAMS = {
+    'num_classes': 5,
+    'input_channels': 3
+}
+
 DATA_PARAMS = {
     'use_weighted_sampler': False,
     'train_class_weights': torch.tensor([1,1.5,1.5,2,0.3], dtype=torch.float32),
@@ -15,30 +20,31 @@ DATA_PARAMS = {
     'train_transform': transforms.Compose([
         # transforms.ToPILImage(),
         random_color_jitter(),
-        transforms.RandomRotation(degrees=45),
-        transforms.RandomAutocontrast(),
+        transforms.RandomInvert(),
+        # transforms.RandomRotation(degrees=15),
         # transforms.ToTensor(),
     ]),
     'val_split_size': 0.1,
-    'min_size_per_class': 1000
+    'min_size_per_class': 400
 }
 
 TRAIN_PARAMS = {
     'max_epochs': 50,
-    'learning_rate': 0.0001,
+    'learning_rate': 0.01,
     'batch_size': 64,
     'patience': 5,
     'score_function': "f1-score",
     'optim_function': torch.optim.Adam,
-    'weight_decay': 0.001,
+    'weight_decay': 0.0001,
     'loss_function': nn.CrossEntropyLoss()
 }
 
 MODEL_PARAMS = {
-    'channels': [16,32],
-    'kernels': [7,5],
-    'strides': [2,1],
-    'pool_kernels': [2,2],
-    'pool_strides': [2,2],
-    'dropout': 0.4
+    'channels': [DOMAIN_PARAMS['input_channels'],8,8,16],
+    'kernels': [3,3,3],
+    'strides': [2,2,1],
+    'pool_kernels': [2,2,2],
+    'pool_strides': [2,2,2],
+    'fc_dims': [16,16,DOMAIN_PARAMS['num_classes']],
+    'dropout': 0.2
 }
