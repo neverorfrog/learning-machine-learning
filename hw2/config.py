@@ -14,8 +14,8 @@ DOMAIN_PARAMS = {
 }
 
 DATA_PARAMS = {
-    'use_weighted_sampler': False,
-    'train_class_weights': torch.tensor([1,1.5,1.5,2,1], dtype=torch.float32),
+    'use_weighted_sampler': True,
+    'train_class_weights': torch.tensor([0.5,0.3,0.3,0.5,1.1], dtype=torch.float32),
     'val_class_weights': torch.tensor([1,1,1,1,1], dtype=torch.float32),
     'train_transform': transforms.Compose([
         # transforms.ToPILImage(),
@@ -25,7 +25,7 @@ DATA_PARAMS = {
         # transforms.ToTensor(),
     ]),
     'val_split_size': 0.1,
-    'min_size_per_class': 500
+    'min_size_per_class': 400
 }
 
 TRAIN_PARAMS = {
