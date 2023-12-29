@@ -3,7 +3,7 @@ import collections
 from IPython import display
 from matplotlib_inline import backend_inline
 import torch
-from toolbox.utils import HyperParameters
+from core.utils import HyperParameters
 import numpy as np
 
 class ProgressBoard(HyperParameters):

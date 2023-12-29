@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from toolbox.utils import HyperParameters
-from toolbox.trainer import *
-from toolbox.utils import *
+from core.utils import HyperParameters
+from core.trainer import *
+from core.utils import *
 
 
 class Module(nn.Module, HyperParameters):

@@ -1,6 +1,6 @@
 import torch
-from toolbox.plotting import show_images
-from toolbox.utils import *
+from core.plotting import show_images
+from core.utils import *
 import torchvision
 import pandas as pd
 from sklearn import datasets

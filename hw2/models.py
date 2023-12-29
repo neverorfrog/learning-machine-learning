@@ -27,6 +27,7 @@ class Classifier(nn.Module, Parameters):
     def load(self, name):
         path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
+        self.eval()
         print("MODELS LOADED!")
     
 
@@ -45,7 +46,7 @@ class CNN(Classifier):
         # self.conv3 = nn.Conv2d(channels[1], channels[2], kernel_size=kernels[2], stride=strides[2], device=device)
         
         #Linear layers
-        self.linear1 = nn.Linear(channels[-1]*6*6,512,bias=bias)
+        self.linear1 = nn.Linear(channels[-1]*9*9,512,bias=bias)
         self.linear2 = nn.Linear(512,num_classes,bias=bias)
         
         #Max-pooling layers
@@ -61,7 +62,7 @@ class CNN(Classifier):
         # self.batch_norm3 = nn.BatchNorm2d(channels[2])
 
         #dropout
-        self.dropout = nn.Dropout(p=0.4)  # p is the probability of dropout
+        self.dropout = nn.Dropout(params['dropout'])  # p is the probability of dropout
 
     def forward(self, x):
         '''

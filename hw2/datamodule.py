@@ -87,7 +87,7 @@ class Dataset(Parameters):
             dataset,
             batch_size = batch_size,
             sampler = weighted_sampler,
-            shuffle = not weighting,
+            shuffle = True,
             collate_fn = lambda x: (
                 torch.stack([transform(item[0]) for item in x]),
                 torch.tensor([item[1] for item in x])
@@ -121,6 +121,7 @@ class ImageDataset(Dataset):
         if path is not None:
             samples = []
             labels = []
+            totensor = transforms.ToTensor()
             
             for label in os.listdir(self.path):
                 label_folder = os.path.join(self.path, label)
@@ -128,8 +129,8 @@ class ImageDataset(Dataset):
                 if os.path.isdir(label_folder):
                     for image_file in os.listdir(label_folder):
                         image_path = os.path.join(label_folder, image_file)
-                        # Image.open(image_path).convert('RGB')
-                        item = io.read_image(image_path)
+                        item = totensor(Image.open(image_path).convert('RGB'))
+                        # item = io.read_image(image_path)
                         samples.append(item)
                         labels.append(int(label))
                         

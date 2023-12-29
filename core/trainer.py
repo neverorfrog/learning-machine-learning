@@ -1,6 +1,6 @@
-from toolbox.utils import HyperParameters
+from core.utils import HyperParameters
 import torch
-from toolbox.plotting import *
+from core.plotting import *
 import numpy as np
 
 class Trainer(HyperParameters):
