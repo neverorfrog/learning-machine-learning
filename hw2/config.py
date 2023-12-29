@@ -15,14 +15,12 @@ DOMAIN_PARAMS = {
 
 DATA_PARAMS = {
     'use_weighted_sampler': True,
-    'train_class_weights': torch.tensor([0.5,0.3,0.3,0.5,1.1], dtype=torch.float32),
+    'train_class_weights': torch.tensor([0.5,0.35,0.35,0.45,1.1], dtype=torch.float32),
     'val_class_weights': torch.tensor([1,1,1,1,1], dtype=torch.float32),
     'train_transform': transforms.Compose([
-        # transforms.ToPILImage(),
         random_color_jitter(),
         transforms.RandomInvert(),
-        # transforms.RandomRotation(degrees=15),
-        # transforms.ToTensor(),
+        transforms.RandomRotation(degrees=15)
     ]),
     'val_split_size': 0.1,
     'min_size_per_class': 400
