@@ -1,15 +1,17 @@
 import numpy as np
-from sklearn.model_selection import train_test_split
 import torch
 import os
-import pandas as pd
 from training_utils import *
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 from torchvision import io
 from config import DATA_PARAMS as params
 from torch.utils.data import WeightedRandomSampler
 from PIL import Image
 
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 class Dataset(Parameters):
     def __init__(self, load=False, train_data=None, val_data=None, test_data=None):
@@ -83,16 +85,20 @@ class Dataset(Parameters):
         weighting = params['use_weighted_sampler']
         weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True) if weighting else None
         #Dataloader stuff
+        g = torch.Generator()
+        g.manual_seed(2000)
         return DataLoader(
             dataset,
             batch_size = batch_size,
             sampler = weighted_sampler,
-            shuffle = True,
+            shuffle = not weighting,
             collate_fn = lambda x: (
                 torch.stack([transform(item[0]) for item in x]),
                 torch.tensor([item[1] for item in x])
             ),
-            num_workers=4
+            num_workers=8,
+            worker_init_fn=seed_worker,
+            generator=g,
         )
     
     def upsampling(self, dataset):
@@ -129,8 +135,8 @@ class ImageDataset(Dataset):
                 if os.path.isdir(label_folder):
                     for image_file in os.listdir(label_folder):
                         image_path = os.path.join(label_folder, image_file)
-                        item = totensor(Image.open(image_path).convert('RGB'))
-                        # item = io.read_image(image_path)
+                        # item = totensor(Image.open(image_path).convert('RGB'))
+                        item = io.read_image(image_path)
                         samples.append(item)
                         labels.append(int(label))
                         
@@ -144,7 +150,7 @@ class ImageDataset(Dataset):
     def __getitem__(self, index):
         img = self.samples[index]
         label = self.labels[index]
-
+        
         if self.transform:
             img = self.transform(img)
 

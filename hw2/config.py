@@ -15,7 +15,7 @@ DOMAIN_PARAMS = {
 
 DATA_PARAMS = {
     'use_weighted_sampler': False,
-    'train_class_weights': torch.tensor([1,1.5,1.5,2,0.3], dtype=torch.float32),
+    'train_class_weights': torch.tensor([1,1.5,1.5,2,1], dtype=torch.float32),
     'val_class_weights': torch.tensor([1,1,1,1,1], dtype=torch.float32),
     'train_transform': transforms.Compose([
         # transforms.ToPILImage(),
