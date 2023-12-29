@@ -7,6 +7,7 @@ from plotting_utils import *
 from car_env import *
 from training_utils import *
 torch.manual_seed(2000)
+np.random.seed(2000)
 
 car_env = CarEnv()
 dataset = MyDataset(load = False)

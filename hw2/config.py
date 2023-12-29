@@ -25,26 +25,26 @@ DATA_PARAMS = {
         # transforms.ToTensor(),
     ]),
     'val_split_size': 0.1,
-    'min_size_per_class': 400
+    'min_size_per_class': 500
 }
 
 TRAIN_PARAMS = {
     'max_epochs': 50,
-    'learning_rate': 0.01,
+    'learning_rate': 0.001,
     'batch_size': 64,
     'patience': 5,
     'score_function': "f1-score",
     'optim_function': torch.optim.Adam,
-    'weight_decay': 0.0001,
+    'weight_decay': 0.001,
     'loss_function': nn.CrossEntropyLoss()
 }
 
 MODEL_PARAMS = {
-    'channels': [DOMAIN_PARAMS['input_channels'],8,8,16],
+    'channels': [DOMAIN_PARAMS['input_channels'],16,16,32],
     'kernels': [3,3,3],
     'strides': [2,2,1],
     'pool_kernels': [2,2,2],
     'pool_strides': [2,2,2],
-    'fc_dims': [16,16,DOMAIN_PARAMS['num_classes']],
+    'fc_dims': [32,16,DOMAIN_PARAMS['num_classes']],
     'dropout': 0.2
 }

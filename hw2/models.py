@@ -2,6 +2,7 @@ import os
 import torch
 import torch.nn as nn
 from training_utils import Parameters
+import torch.nn.init as init
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from config import MODEL_PARAMS as params
 
@@ -60,6 +61,15 @@ class CNN(Classifier):
             fc_layers.append(self.activation)
             fc_layers.append(nn.Dropout(params['dropout']))
         self.fc = nn.Sequential(*fc_layers)
+        
+        #Initialization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                # Xavier/Glorot initialization for weights
+                init.xavier_uniform_(m.weight)
+                # Zero initialization for biases
+                if m.bias is not None:
+                    init.zeros_(m.bias)
 
     def forward(self, x):
         '''
@@ -77,3 +87,7 @@ class CNN(Classifier):
         # Fully Connected Layers
         x = torch.flatten(x,start_dim=1)
         return self.fc(x)
+    
+    
+# class Ensemble(Classifier):
+#     def __ini
