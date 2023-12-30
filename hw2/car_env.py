@@ -7,13 +7,13 @@ class CarEnv():
         self.env_arguments = {
             'domain_randomize': False,
             'continuous': False,
-            'render_mode': 'state_pixels'
+            'render_mode': 'human'
         }
         self.env_name = 'CarRacing-v2'
         self.env = gym.make(self.env_name, **self.env_arguments)
-        print("Environment:", self.env_name)
-        print("Action space:", self.env.action_space)
-        print("Observation space:", self.env.observation_space)
+        # print("Environment:", self.env_name)
+        # print("Action space:", self.env.action_space)
+        # print("Observation space:", self.env.observation_space)
         
 
     def play(self,model):
@@ -42,4 +42,6 @@ class CarEnv():
             
         print(total_reward)
         print(frames)
+        if (self.env.tile_visited_count / len(self.env.track)) >= 0.99:
+            print("LAP COMPLETED")
         

@@ -19,8 +19,9 @@ cnn = CNN(name="new", num_classes = 5)
 trainer = Trainer(model=cnn, data=dataset)
 
 # cnn.load("new")
-# trainer.fit()
-cnn.load(name="new")
+for _ in range(3):
+    trainer.fit()
+cnn.load(name="906")
 trained = Trainer(cnn, dataset)
 trained.evaluate()
 car_env.play(cnn)
