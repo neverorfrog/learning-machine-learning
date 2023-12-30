@@ -7,7 +7,7 @@ class CarEnv():
         self.env_arguments = {
             'domain_randomize': False,
             'continuous': False,
-            'render_mode': 'human'
+            'render_mode': 'state_pixels'
         }
         self.env_name = 'CarRacing-v2'
         self.env = gym.make(self.env_name, **self.env_arguments)
@@ -41,6 +41,5 @@ class CarEnv():
             frames += 1
             
         print(total_reward)
-        print(terminated)
         print(frames)
         
