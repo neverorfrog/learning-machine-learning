@@ -11,9 +11,9 @@ class CarEnv():
         }
         self.env_name = 'CarRacing-v2'
         self.env = gym.make(self.env_name, **self.env_arguments)
-        print("Environment:", self.env_name)
-        print("Action space:", self.env.action_space)
-        print("Observation space:", self.env.observation_space)
+        # print("Environment:", self.env_name)
+        # print("Action space:", self.env.action_space)
+        # print("Observation space:", self.env.observation_space)
         
 
     def play(self,model):
@@ -28,6 +28,7 @@ class CarEnv():
         done = False
         total_reward = 0
         terminated = False
+        frames = 0
         while not done:    
             
             obs = np.transpose(obs, (2, 0, 1))
@@ -37,7 +38,10 @@ class CarEnv():
             obs, reward, terminated, truncated, _ = self.env.step(action)
             done = terminated or truncated
             total_reward += reward
+            frames += 1
             
         print(total_reward)
-        print(terminated)
+        print(frames)
+        if (self.env.tile_visited_count / len(self.env.track)) >= 0.99:
+            print("LAP COMPLETED")
         

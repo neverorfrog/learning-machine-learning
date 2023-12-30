@@ -1,16 +1,14 @@
 import os
-from sklearn.metrics import classification_report, confusion_matrix
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from training_utils import Parameters, accuracy, plot_confusion_matrix
-
+from training_utils import Parameters
+import torch.nn.init as init
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+from config import MODEL_PARAMS as params
 
 class Classifier(nn.Module, Parameters):
     """The base class of models. Not instantiable because forward inference has to be defined by subclasses."""
-    def __init__(self, name, num_classes, score_function=accuracy, bias=True):
+    def __init__(self, name, num_classes, bias=True):
         super().__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_parameters() #saves as class fields the parameters of the constructor
@@ -25,56 +23,53 @@ class Classifier(nn.Module, Parameters):
         path = os.path.join("models",self.name)
         if not os.path.exists(path): os.mkdir(path)
         torch.save(self.state_dict(), open(os.path.join(path,"model.pt"), "wb"))
-        # print("MODELS SAVED!")
+        print("MODEL SAVED!")
 
     def load(self, name):
         path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
-        # print("MODELS LOADED!")
-        
-    def evaluate(self, dataset):
-        predictions_train = self.predict(dataset.X_train)
-        predictions_test = self.predict(dataset.X_test)
-        # evaluation against training set
-        print("Train Score: ", self.score_function(predictions_train, dataset.y_train, self.num_classes))
-        # evaluation against test set
-        print("Test Score: ", self.score_function(predictions_test, dataset.y_test, self.num_classes))
-        print(classification_report(dataset.y_test, predictions_test, digits=3))
-        plot_confusion_matrix(dataset.y_test, predictions_test, dataset.classes, normalize=True)
+        self.eval()
+        print("MODEL LOADED!")
     
 
 class CNN(Classifier):
     def __init__(self, name, num_classes, bias=True):
         super().__init__(name, num_classes, bias=True)
         
-        #Channels
-        self.channels0 = 3
-        self.channels1 = 4
-        self.channels2 = 8
-        self.channels3 = 16
-        self.channels4 = 32
+        self.activation = nn.LeakyReLU()
         
         #Convolutional Layers (take as input the image)
-        self.conv1 = nn.Conv2d(self.channels0, self.channels1, kernel_size=3, padding=1, bias=bias, device=device)
-        self.conv2 = nn.Conv2d(self.channels1, self.channels2, kernel_size=3, padding=1, bias=bias, device=device)
-        self.conv3 = nn.Conv2d(self.channels2, self.channels3, kernel_size=3, padding=1, bias=bias, device=device)
-        self.conv4 = nn.Conv2d(self.channels3, self.channels4, kernel_size=3, padding=1, bias=bias, device=device)
+        channels = params['channels']
+        kernels = params['kernels']
+        strides = params['strides']
+        pool_kernels = params['pool_kernels']
+        pool_strides = params['pool_strides']
         
+        conv_layers = []
+        for i in range(len(kernels)):
+            conv_layers.append(nn.Conv2d(channels[i], channels[i+1], kernel_size=kernels[i], stride=strides[i], device=device))
+            conv_layers.append(nn.MaxPool2d(kernel_size=pool_kernels[i], stride=pool_strides[i]))
+            conv_layers.append(nn.BatchNorm2d(channels[i+1]))
+            conv_layers.append(self.activation)
+        self.conv = nn.Sequential(*conv_layers) 
+
+        #Fully Connected layers
+        fc_dims = params['fc_dims']
+        fc_layers = []
+        for i in range(len(fc_dims)-1):
+            fc_layers.append(nn.Linear(fc_dims[i],fc_dims[i+1],bias=bias))
+            fc_layers.append(self.activation)
+            fc_layers.append(nn.Dropout(params['dropout']))
+        self.fc = nn.Sequential(*fc_layers)
         
-        #Linear layers
-        self.activation = nn.ReLU()
-        self.linear1 = nn.Linear(self.channels4*6*6,512,bias=bias)
-        self.linear2 = nn.Linear(512,num_classes,bias=bias)
-        
-        #Max-pooling layers
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        
-        #batch normalization layers
-        self.batch_norm1 = nn.BatchNorm2d(self.channels1)
-        self.batch_norm2 = nn.BatchNorm2d(self.channels2)
-        self.batch_norm3 = nn.BatchNorm2d(self.channels3)
-        self.batch_norm4 = nn.BatchNorm2d(self.channels4)
-        
+        #Initialization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                # Xavier/Glorot initialization for weights
+                init.xavier_uniform_(m.weight)
+                # Zero initialization for biases
+                if m.bias is not None:
+                    init.zeros_(m.bias)
 
     def forward(self, x):
         '''
@@ -85,14 +80,14 @@ class CNN(Classifier):
         '''
         # Convolutions
         x = torch.tensor(x, dtype=torch.float32)
-        x = self.batch_norm1(self.pool(self.activation(self.conv1(x))))
-        x = self.batch_norm2(self.pool(self.activation(self.conv2(x))))
-        x = self.batch_norm3(self.pool(self.activation(self.conv3(x))))
-        x = self.batch_norm4(self.pool(self.activation(self.conv4(x))))
+        x = self.conv(x)
         
         # print("state shape={0}".format(x.shape))
         
-        # Linear Layers
+        # Fully Connected Layers
         x = torch.flatten(x,start_dim=1)
-        x = self.activation(self.linear1(x))
-        return self.linear2(x)
+        return self.fc(x)
+    
+    
+# class Ensemble(Classifier):
+#     def __ini

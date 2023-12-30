@@ -1,49 +1,76 @@
 import numpy as np
+from sklearn.metrics import classification_report
 import torch
-from plotting_utils import Parameters, ProgressBoard
-from torch import nn
+from plotting_utils import Parameters, plot_confusion_matrix
 from training_utils import *
+from config import TRAIN_PARAMS as params
 
 class Trainer(Parameters):
     """The base class for training models with data"""
     
-    def __init__(self, model, data, optim_function = torch.optim.Adam, loss_function = nn.CrossEntropyLoss(), score_function = accuracy):
+    def __init__(self, model, data):
+        self.loss_function = params['loss_function']
+        self.score_function = params['score_function']
         self.save_parameters()
         
-    def compute_loss(self,batch,train=True): #forward propagation
+    def evaluate(self):
+        predictions_train = self.model.predict(self.data.train_data.samples)
+        predictions_test = self.model.predict(self.data.test_data.samples)
+        # evaluation against training set
+        # print("Train Score: ", self.score_function(predictions_train, self.data.train_data.labels, self.model.num_classes))
+        # evaluation against test set
+        # print("Test Score: ", self.score_function(predictions_test, self.data.test_data.labels, self.model.num_classes))
+        print(classification_report(self.data.test_data.labels, predictions_test, digits=3))
+        plot_confusion_matrix(self.data.test_data.labels, predictions_test, self.data.classes, normalize=True)
+        
+    def train_step(self,batch): #forward propagation
         inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
         labels = batch[-1].type(torch.long)# labels -> shape = (m)
-        if train is True:
+        logits = self.model(inputs)
+        # l2_reg = sum(torch.norm(param) for param in self.model.parameters())
+        loss = self.loss_function(logits, labels)
+        # loss += params['weight_decay'] * l2_reg
+        return loss
+    
+    def eval_step(self,batch):
+        with torch.no_grad():
+            inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+            labels = batch[-1].type(torch.long)# labels -> shape = (m)
             logits = self.model(inputs)
             loss = self.loss_function(logits, labels)
-        else:
-            with torch.no_grad():
-                logits = self.model(inputs)
-                loss = self.loss_function(logits, labels)   
-        predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(labels.dtype) # the most probable class is the one with highest probability
-        score = self.score_function(predictions,labels,self.data.num_classes) 
-        return loss, score  
+            predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
+            # score = self.score_function(predictions,batch[-1],5) 
+            report = classification_report(batch[-1],predictions, output_dict=True)
+            score = report['weighted avg']['f1-score']
+        return loss, score
+            
     
 
     # That is the effective training cycle in which the epochs pass by
-    def fit(self, max_epochs = 10, lr = 0.001, batch_size = 64, patience = 5, plot = False):
+    def fit(self, plot = False):
+        #parametric stuff
+        max_epochs = params['max_epochs']
+        learning_rate = params['learning_rate']
+        batch_size = params['batch_size']
+        patience = params['patience']
+        
         #stuff for dataset
         train_dataloader = self.data.train_dataloader(batch_size)
-        test_dataloader = self.data.test_dataloader(batch_size)
+        val_dataloader = self.data.val_dataloader(batch_size)
         self.num_train_batches = len(train_dataloader)
-        self.num_test_batches = (len(test_dataloader) if test_dataloader is not None else 0)
+        self.num_val_batches = (len(val_dataloader) if val_dataloader is not None else 0)
         
         # stuff for iterations
         train_batch_idx = 0
-        test_batch_idx = 0
+        val_batch_idx = 0
         
         #stuff for early stopping
         early_stopping = False
         worse_epochs = 0
+        best_score = 0
         best_loss = np.inf
         
-        optim = self.optim_function(self.model.parameters(), lr=lr)
-        
+        optim = params['optim_function'](self.model.parameters(), lr=learning_rate, weight_decay=params['weight_decay'])
                 
         for epoch in range(1, max_epochs + 1): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
             if early_stopping == True: break
@@ -53,7 +80,7 @@ class Trainer(Parameters):
             for batch in train_dataloader:
                 train_batch_idx += 1
                 #Forward propagation
-                loss, score = self.compute_loss(batch, train = True)
+                loss = self.train_step(batch)
                 if plot:
                     self.plot('loss', loss, self.device, train = True)
                 #Backward Propagation
@@ -62,35 +89,35 @@ class Trainer(Parameters):
                     loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
                     optim.step() 
                     
-            #Testing
+            #Validation
             self.model.eval()
-            scores = []            
-            losses = []
-            for batch in test_dataloader:
-                test_batch_idx += 1
+            epoch_loss = 0           
+            epoch_score = 0
+            for batch in val_dataloader:
+                val_batch_idx += 1
                 #Forward propagation
-                loss, score = self.compute_loss(batch, train = False)
+                loss, score = self.eval_step(batch)
                 if plot:
                     self.plot('loss', loss, self.device, train = False)
                 #Logging
-                losses.append(loss)
-                scores.append(score)
+                epoch_loss += loss.item()
+                epoch_score += score
                 
-            mean_loss = np.mean(losses) 
-            mean_score = np.mean(scores)
-            print(f"EPOCH {epoch} SCORE: {mean_score:.3f} LOSS: {mean_loss:.3f}")  
+            epoch_loss /= len(val_dataloader) 
+            epoch_score /= len(val_dataloader)
+            print(f"EPOCH {epoch} SCORE: {epoch_score:.3f} LOSS: {epoch_loss:.3f}")  
             
             # Early stopping mechanism     
-            if mean_loss > best_loss:
+            if epoch_score < best_score and epoch_loss > best_loss:
                 worse_epochs += 1
             else:
-                best_loss = mean_loss
-                worse_epochs = 0
                 self.model.save()
+                best_score = max(epoch_score, best_score)
+                best_loss = min(epoch_loss, best_loss)
+                worse_epochs = 0
             if worse_epochs == patience: 
                 early_stopping = True
-                print(f'Early stopping at epoch {epoch} due to no improvement.')
-        
+                print(f'Early stopping at epoch {epoch} due to no improvement.')                
     
     def plot(self, key, value, device, train, epoch, train_batch_idx):
             """Plot a point in animation."""
@@ -100,6 +127,6 @@ class Trainer(Parameters):
                 n = self.num_train_batches
             else:
                 x = epoch + 1
-                n = self.num_test_batches 
+                n = self.num_val_batches 
             self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n = int(n))
             

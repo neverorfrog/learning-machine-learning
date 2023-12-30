@@ -1,4 +1,0 @@
-pip install Flask
-$env:FLASK_APP="server.py"
-$env:FLASK_ENV="development"
-flask run

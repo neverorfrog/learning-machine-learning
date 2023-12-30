@@ -1,161 +1,186 @@
 import numpy as np
 import torch
 import os
-import pandas as pd
-from image_utils import *
-from training_utils import compute_class_weights
-from torch.utils.data import DataLoader, WeightedRandomSampler, TensorDataset
-from torchvision import transforms
+from training_utils import *
+from torch.utils.data import DataLoader
+from torchvision import io
+from config import DATA_PARAMS as params
+from torch.utils.data import WeightedRandomSampler
+from PIL import Image
 
-class Dataset():
-    """
-    path : folder containing the label folders
-    """
-    def __init__(self, load=False, X_train=None, y_train=None, X_test=None, y_test=None):
-        #initializaing from folders of images
-        self.transform = transforms.Compose([
-            transforms.ToPILImage(),
-            random_color_jitter(),
-            transforms.ToTensor()
-        ])
-        if load is False:
-            self.dataframe_train = self.create_dataframe("data", train = True)
-            self.dataframe_test = self.create_dataframe("data", train = False)
-            self.X_train, self.y_train = self.extract_tensors(self.dataframe_train)
-            self.X_test, self.y_test = self.extract_tensors(self.dataframe_test)
-            self.save()
-        elif load is True:
-            self.load()
-            
-        if X_train is not None and y_train is not None:
-            self.X_train = X_train
-            self.y_train = y_train
-            self.X_test = X_test
-            self.y_test = y_test
-            
-        # assert(self.X_train)
-            
-        self.classes = np.unique(self.y_train)
-        self.num_features = self.X_train.shape[1]
-        self.num_train = len(self.y_train); self.num_test = len(self.y_test)
-        self.train_data = tuple([self.X_train, self.y_train])
-        self.test_data = tuple([self.X_test, self.y_test])
-        self.num_classes = len(self.classes)
-    
-    def create_dataframe(self,path,train):
-        if train:
-            path = path + "/train"
-        else:
-            path = path + "/test"
-        
-        data = []
-        labels = []
-        
-        for label in os.listdir(path):
-            label_folder = os.path.join(path, label)
-            
-            if os.path.isdir(label_folder):
-                for image_file in os.listdir(label_folder):
-                    image_path = os.path.join(label_folder, image_file)
-                    # All labels                          
-                    data.append(process_image(image_path, self.transform))
-                    labels.append(label)
-                
-        df = pd.DataFrame({'Image': data, 'Label': labels})
-        return df 
-              
-    def train_dataloader(self, batch_size):
-        return self.get_dataloader(True, batch_size)
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
-    def test_dataloader(self, batch_size):
-        return self.get_dataloader(False, batch_size)
-    
-    def get_dataloader(self, train, batch_size):
-        """Yields a minibatch of data at each next(iter(dataloader))"""
-        data = self.train_data if train else self.test_data
-        labels = torch.tensor(data[-1], dtype=torch.int32)
-        weights = [self.class_weights(labels)[label] for label in labels]
-        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
-        return DataLoader(
-            dataset = TensorDataset(*data),
-            batch_size = batch_size,
-            sampler = weighted_sampler,
-            # shuffle = train,
-            collate_fn = lambda x: (
-                torch.stack([self.transform(item[0]) for item in x]),
-                torch.tensor([item[1] for item in x]))
-        )
-     
-    def summarize(self, train = True):
+class Dataset(Parameters):
+    def __init__(self, load=False, train_data=None, val_data=None, test_data=None):
+        self.load() if load is True else self.save_parameters()
+        if load is False: self.save()
+        self.classes = train_data.classes
         
-        inputs = self.X_train if train is True else self.X_test
-        labels = self.y_train if train is True else self.y_test
-        
-        # gathering details
-        n_rows = inputs.shape[0] 
-        n_cols = inputs.shape[1] 
-        n_classes = len(self.classes)
-        # summarize
-        print(f'N Examples: {n_rows}')
-        print(f'N Inputs: {n_cols}')
-        print(f'N Classes: {n_classes}')
-        print(f'Classes: {self.classes}')
-        # print(f'Classe Weights: {self.class_weights}')
-        # class breakdown
-        for c in self.classes:
-            total = len(labels[labels == c])
-            ratio = (total / float(len(labels))) * 100
-            print(f' - Class {str(c)}: {total} ({ratio})')
-        if hasattr(self, 'dataframe'):
-            print(self.dataframe.head())
-    
-    def extract_tensors(self, dataframe):       
-        # Headers list:
-        headers = dataframe.columns # 'x' for inputs, 'y' for labels
-        #Inputs array
-        images = dataframe[headers[0]] #this is a list
-        #Features array
-        X = torch.vstack([images[i].unsqueeze(0) for i in range(len(images))]) 
-                       
-        #Labels array
-        if len(headers)>1:
-            labels = dataframe[headers[1]]
-            y = torch.tensor(np.array(labels.values, dtype=np.float64))
-        else:
-            y = None
-            
-        return X,y     
-        
-    def head(self):
-        print(self.X[0])
-        
-    def class_weights(self, labels):
-        class_weights = compute_class_weights(labels)
-        return torch.tensor(class_weights, dtype=torch.float32)
-    
-    def save(self):
-        path = os.path.join("data","tensors")
-        torch.save(self.X_train, open(os.path.join(path,"X_train.dat"), "wb"))
-        torch.save(self.y_train, open(os.path.join(path,"y_train.dat"), "wb"))
-        torch.save(self.X_test, open(os.path.join(path,"X_test.dat"), "wb"))
-        torch.save(self.y_test, open(os.path.join(path,"y_test.dat"), "wb"))
+    def save(self, path=None):
+        if path is None: return
+        torch.save(self.train_data, open(os.path.join(path,"train_data.dat"), "wb"))
+        torch.save(self.val_data, open(os.path.join(path,"val_data.dat"), "wb"))
+        torch.save(self.test_data, open(os.path.join(path,"test_data.dat"), "wb"))
         print("DATA SAVED!")
-
-    def load(self):
-        path = os.path.join("data","tensors")
-        self.X_train = torch.load(open(os.path.join(path,"X_train.dat"),"rb"))
-        self.y_train = torch.load(open(os.path.join(path,"y_train.dat"),"rb"))
-        self.X_test = torch.load(open(os.path.join(path,"X_test.dat"),"rb"))
-        self.y_test = torch.load(open(os.path.join(path,"y_test.dat"),"rb"))
+        
+    def load(self, path=None):
+        self.train_data = torch.load(open(os.path.join(path,"train_data.dat"),"rb"))
+        self.val_data = torch.load(open(os.path.join(path,"val_data.dat"),"rb"))
+        self.test_data = torch.load(open(os.path.join(path,"test_data.dat"),"rb"))
         print("DATA LOADED!\n")  
         
-    def split_by_labels(self, zero=[0,3,4], one=[1,2]):
-        """
-        Params zero and one are labels (arrays) corresponding to the two classes
-        """
-        new_y_train = torch.tensor([0 if self.y_train[j] in zero else 1 for j in range(len(self.y_train))])
-        new_y_test = torch.tensor([0 if self.y_test[j] in zero else 1 for j in range(len(self.y_test))])
+    def split_train(self, train_data, ratio):
+        samples = train_data.samples
+        labels = train_data.labels
+        num_train_samples = samples.size(0)
+        num_val_samples = int(ratio * num_train_samples)
+        val_indices = np.random.permutation(num_train_samples)[:num_val_samples]
         
-        return Dataset(load = None, X_train = self.X_train, y_train = new_y_train, X_test = self.X_test, y_test = new_y_test)
+        #exclude samples that go into validation set
+        new_train_data = samples[torch.tensor(list(set(range(num_train_samples)) - set(val_indices)))]
+        new_train_labels = labels[torch.tensor(list(set(range(num_train_samples)) - set(val_indices)))]
         
+        #data with sampled indices
+        val_data = samples[val_indices]
+        val_labels = labels[val_indices]
         
+        return new_train_data, val_data, new_train_labels, val_labels
+              
+    def summarize(self, split):
+        # gathering data
+        if split == 'train':
+            data = self.train_data
+        elif split == 'test':
+            data = self.test_data
+        elif split == 'val':
+            data = self.val_data
+        
+        # summarizing
+        print(f'N Examples: {len(data.samples)}')
+        print(f'N Classes: {len(data.classes)}')
+        print(f'Classes: {data.classes}')
+        
+        # class breakdown
+        for c in data.classes:
+            total = len(data.labels[data.labels == c])
+            ratio = (total / float(len(data.labels))) * 100
+            print(f' - Class {str(c)}: {total} ({ratio})')
+        
+    def train_dataloader(self, batch_size):
+        return self.get_dataloader(self.train_data, batch_size)
+
+    def val_dataloader(self, batch_size):
+        return self.get_dataloader(self.val_data, batch_size)
+    
+    def get_dataloader(self, dataset, batch_size):
+        """Yields a minibatch of data at each next(iter(dataloader))"""
+        transform = params['train_transform'] 
+        labels = dataset.labels
+        #Stuff for weighted sampling
+        class_weights = params['train_class_weights']
+        weights = [class_weights[label] for label in labels]
+        weighting = params['use_weighted_sampler']
+        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True) if weighting else None
+        #Dataloader stuff
+        g = torch.Generator()
+        g.manual_seed(2000)
+        return DataLoader(
+            dataset,
+            batch_size = batch_size,
+            sampler = weighted_sampler,
+            shuffle = not weighting,
+            collate_fn = lambda x: (
+                torch.stack([transform(item[0]) for item in x]),
+                torch.tensor([item[1] for item in x])
+            ),
+            num_workers=8,
+            worker_init_fn=seed_worker,
+            generator=g,
+        )
+    
+    def upsampling(self, dataset):
+        min_size = params['min_size_per_class']
+        train_samples = dataset.samples
+        train_labels = dataset.labels
+        for label in dataset.classes:
+            count = torch.sum(dataset.labels == label).item()
+            if count < min_size:
+                difference = min_size - count
+                class_samples = train_samples[(train_labels == label),:]
+                indices = [random.randint(0, count-1) for _ in range(difference)]
+                
+                new_samples = torch.vstack([class_samples[indices[j]].unsqueeze(0) for j in range(difference)])
+                new_labels = torch.zeros(size=[difference], dtype=torch.int) + label
+                
+                train_samples = torch.vstack([train_samples, new_samples])
+                train_labels = torch.cat([train_labels, new_labels])
+                
+        return train_samples, train_labels
+        
+
+class ImageDataset(Dataset):
+    def __init__(self, path=None, samples=None, labels=None, transform=None):
+        self.save_parameters()
+        if path is not None:
+            samples = []
+            labels = []
+            totensor = transforms.ToTensor()
+            
+            for label in os.listdir(self.path):
+                label_folder = os.path.join(self.path, label)
+                
+                if os.path.isdir(label_folder):
+                    for image_file in os.listdir(label_folder):
+                        image_path = os.path.join(label_folder, image_file)
+                        # item = totensor(Image.open(image_path).convert('RGB'))
+                        item = io.read_image(image_path)
+                        samples.append(item)
+                        labels.append(int(label))
+                        
+            self.samples = torch.vstack([samples[i].unsqueeze(0) for i in range(len(samples))])
+            self.labels = torch.tensor(labels, dtype=torch.int)
+        self.classes = np.unique(self.labels)
+    
+    def __len__(self):
+        return self.samples.shape[0]
+    
+    def __getitem__(self, index):
+        img = self.samples[index]
+        label = self.labels[index]
+        
+        if self.transform:
+            img = self.transform(img)
+
+        return img, label
+        
+class MyDataset(Dataset):
+    def __init__(self, load=False):
+        #initializaing from folders of images
+        if load is False:
+            #train split
+            train_dataset = ImageDataset("data/train")
+            train_samples, train_labels = self.upsampling(train_dataset)
+            train_dataset = ImageDataset(samples=train_samples, labels=train_labels)
+            
+            #test split
+            test_dataset = ImageDataset("data/test")
+            
+            #validation split
+            train_samples, val_samples, train_labels, val_labels = self.split_train(train_dataset,ratio=params['val_split_size'])
+            train_dataset = ImageDataset(samples=train_samples, labels=train_labels, transform=params['train_transform'])
+            val_dataset = ImageDataset(samples=val_samples, labels=val_labels)
+            
+            super().__init__(load,train_data=train_dataset, val_data=val_dataset, test_data=test_dataset)
+        elif load is True:
+            super().__init__(load)
+    
+    def save(self):
+        path = os.path.join("data","saved")
+        super().save(path)
+
+    def load(self):
+        path = os.path.join("data","saved")
+        super().load(path)
