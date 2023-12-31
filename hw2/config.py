@@ -4,10 +4,6 @@ from training_utils import random_color_jitter
 from torchvision import transforms
 from torch import nn
 
-def random_odd(start, end):
-    number = random.randint(start, end)
-    return number if number % 2 != 0 else number+1
-
 DOMAIN_PARAMS = {
     'num_classes': 5,
     'input_channels': 3
@@ -22,7 +18,7 @@ DATA_PARAMS = {
         transforms.RandomInvert(),
         transforms.RandomRotation(degrees=15)
     ]),
-    'val_split_size': 0.15,
+    'val_split_size': 0,
     'min_size_per_class': 300
 }
 

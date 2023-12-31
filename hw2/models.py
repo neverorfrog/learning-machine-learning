@@ -17,7 +17,7 @@ class Classifier(nn.Module, Parameters):
         pass
 
     def predict(self, X):
-        return self(X).argmax(axis = 1).squeeze() #shape = (m)
+        return torch.softmax(self(X), dim=-1).argmax(axis = -1).squeeze() #shape = (m)
     
     def save(self):
         path = os.path.join("models",self.name)
