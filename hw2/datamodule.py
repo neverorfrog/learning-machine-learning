@@ -17,7 +17,7 @@ class Dataset(Parameters):
     def __init__(self, load=False, train_data=None, val_data=None, test_data=None):
         self.load() if load is True else self.save_parameters()
         if load is False: self.save()
-        self.classes = train_data.classes
+        self.classes = self.train_data.classes
         
     def save(self, path=None):
         if path is None: return
@@ -35,7 +35,7 @@ class Dataset(Parameters):
     def split_train(self, train_data, ratio):
         samples = train_data.samples
         labels = train_data.labels
-        num_train_samples = samples.size(0)
+        num_train_samples = len(samples)
         num_val_samples = int(ratio * num_train_samples)
         val_indices = np.random.permutation(num_train_samples)[:num_val_samples]
         
@@ -70,20 +70,20 @@ class Dataset(Parameters):
             print(f' - Class {str(c)}: {total} ({ratio})')
         
     def train_dataloader(self, batch_size):
-        return self.get_dataloader(self.train_data, batch_size)
+        return self.get_dataloader(self.train_data, batch_size, use_weighting=params['use_weighted_sampler'])
 
     def val_dataloader(self, batch_size):
-        return self.get_dataloader(self.val_data, batch_size)
+        return self.get_dataloader(self.val_data, batch_size, use_weighting=False)
     
-    def get_dataloader(self, dataset, batch_size):
-        """Yields a minibatch of data at each next(iter(dataloader))"""
-        transform = params['train_transform'] 
-        labels = dataset.labels
+    def get_dataloader(self, dataset, batch_size, use_weighting):
+        """
+        - Yields a minibatch of data at each next(iter(dataloader))
+        - dataset needs to have __item__ 
+        """
         #Stuff for weighted sampling
         class_weights = params['train_class_weights']
-        weights = [class_weights[label] for label in labels]
-        weighting = params['use_weighted_sampler']
-        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True) if weighting else None
+        weights = [class_weights[label] for label in dataset.labels]
+        weighted_sampler = WeightedRandomSampler(weights, len(weights), replacement=True) if use_weighting else None
         #Dataloader stuff
         g = torch.Generator()
         g.manual_seed(2000)
@@ -91,12 +91,8 @@ class Dataset(Parameters):
             dataset,
             batch_size = batch_size,
             sampler = weighted_sampler,
-            shuffle = not weighting,
-            collate_fn = lambda x: (
-                torch.stack([transform(item[0]) for item in x]),
-                torch.tensor([item[1] for item in x])
-            ),
-            num_workers=8,
+            shuffle = not use_weighting,
+            num_workers=12,
             worker_init_fn=seed_worker,
             generator=g,
         )
@@ -127,7 +123,6 @@ class ImageDataset(Dataset):
         if path is not None:
             samples = []
             labels = []
-            totensor = transforms.ToTensor()
             
             for label in os.listdir(self.path):
                 label_folder = os.path.join(self.path, label)
@@ -135,7 +130,6 @@ class ImageDataset(Dataset):
                 if os.path.isdir(label_folder):
                     for image_file in os.listdir(label_folder):
                         image_path = os.path.join(label_folder, image_file)
-                        # item = totensor(Image.open(image_path).convert('RGB'))
                         item = io.read_image(image_path)
                         samples.append(item)
                         labels.append(int(label))
@@ -155,27 +149,54 @@ class ImageDataset(Dataset):
             img = self.transform(img)
 
         return img, label
+    
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import EditedNearestNeighbours
+from imblearn.combine import SMOTEENN
         
 class MyDataset(Dataset):
-    def __init__(self, load=False):
+    def __init__(self, load=False, samples=None, labels=None):
         #initializaing from folders of images
         if load is False:
-            #train split
-            train_dataset = ImageDataset("data/train")
-            train_samples, train_labels = self.upsampling(train_dataset)
-            train_dataset = ImageDataset(samples=train_samples, labels=train_labels)
-            
-            #test split
-            test_dataset = ImageDataset("data/test")
-            
-            #validation split
-            train_samples, val_samples, train_labels, val_labels = self.split_train(train_dataset,ratio=params['val_split_size'])
-            train_dataset = ImageDataset(samples=train_samples, labels=train_labels, transform=params['train_transform'])
-            val_dataset = ImageDataset(samples=val_samples, labels=val_labels)
-            
-            super().__init__(load,train_data=train_dataset, val_data=val_dataset, test_data=test_dataset)
+            if samples is not None and labels is not None:
+                super().__init__(load=False, train_data=ImageDataset(samples=samples,labels=labels))
+            else:
+                #train split
+                train_dataset = ImageDataset("data/train")
+                train_samples, train_labels = self.upsampling(train_dataset)
+                train_dataset = ImageDataset(samples=train_samples, labels=train_labels)
+                
+                #test split
+                test_dataset = ImageDataset("data/test")
+                
+                #validation split
+                train_samples, val_samples, train_labels, val_labels = self.split_train(train_dataset,ratio=params['val_split_size'])
+                train_dataset = ImageDataset(samples=train_samples, labels=train_labels, transform=params['train_transform'])
+                val_dataset = ImageDataset(samples=val_samples, labels=val_labels)
+                
+                if params['resample']:
+                    train_dataset = self.resample(train_dataset)
+                    
+                super().__init__(load,train_data=train_dataset, val_data=val_dataset, test_data=test_dataset)
         elif load is True:
             super().__init__(load)
+            
+    def resample(self,train_data):
+        X = torch.flatten(train_data.samples,start_dim=1)
+        y = train_data.labels
+        smote = SMOTE(sampling_strategy='auto', random_state=42)
+        enn = EditedNearestNeighbours(sampling_strategy='all')
+        smote_enn = SMOTEENN(random_state=42, smote=smote, enn=enn)
+        X_res, y_res = smote_enn.fit_resample(X,y)
+        X_res = torch.unflatten(torch.from_numpy(X_res), dim=1, sizes=[3,96,96])
+        train_data = ImageDataset(samples=X_res, labels=y_res)
+        return train_data
+        
+    # pipeline = Pipeline([
+    #     ('smote', SMOTE(sampling_strategy='auto')),
+    #     ('enn', EditedNearestNeighbours(sampling_strategy='auto'))
+    # ])
+        
     
     def save(self):
         path = os.path.join("data","saved")

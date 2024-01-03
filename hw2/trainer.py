@@ -39,7 +39,6 @@ class Trainer(Parameters):
             logits = self.model(inputs)
             loss = self.loss_function(logits, labels)
             predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
-            # score = self.score_function(predictions,batch[-1],5) 
             report = classification_report(batch[-1],predictions, output_dict=True)
             score = report['weighted avg']['f1-score']
         return loss, score

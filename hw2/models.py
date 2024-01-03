@@ -87,7 +87,3 @@ class CNN(Classifier):
         # Fully Connected Layers
         x = torch.flatten(x,start_dim=1)
         return self.fc(x)
-    
-    
-# class Ensemble(Classifier):
-#     def __ini
