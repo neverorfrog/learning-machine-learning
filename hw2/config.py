@@ -19,7 +19,7 @@ DATA_PARAMS = {
         transforms.RandomInvert(),
         transforms.RandomErasing(),
         transforms.RandomRotation(degrees=15),
-        transforms.RandomHorizontalFlip()
+        # transforms.RandomHorizontalFlip()
     ]),
     'val_split_size': 0.15,
     'min_size_per_class': 1
@@ -27,7 +27,7 @@ DATA_PARAMS = {
 
 TRAIN_PARAMS = {
     'max_epochs': 70,
-    'learning_rate': 0.00005,
+    'learning_rate': 0.0001,
     'batch_size': 64,
     'patience': 5,
     'score_function': "f1-score",
@@ -37,11 +37,11 @@ TRAIN_PARAMS = {
 }
 
 MODEL_PARAMS = {
-    'channels': [DOMAIN_PARAMS['input_channels'],5,32],
-    'kernels': [7,3],
-    'strides': [3,2],
-    'pool_kernels': [2,2],
-    'pool_strides': [2,2],
-    'fc_dims': [32*3*3,64,DOMAIN_PARAMS['num_classes']],
-    'dropout': 0.2
+    'channels': [DOMAIN_PARAMS['input_channels'],5,10,20],
+    'kernels': [11,11,5],
+    'strides': [1,1,1],
+    'pool_kernels': [2,2,2],
+    'pool_strides': [2,2,2],
+    'fc_dims': [720,256,DOMAIN_PARAMS['num_classes']],
+    'dropout': 0.25
 }

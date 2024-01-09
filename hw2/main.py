@@ -1,5 +1,4 @@
 import warnings
-
 from trainer import *
 from models import *
 from datamodule import MyDataset
@@ -13,7 +12,7 @@ np.random.seed(2000)
 random.seed(2000)
 
 car_env = CarEnv()
-dataset = MyDataset(load=False)
+dataset = MyDataset(load=True)
 dataset.summarize('train')
 
 cnn = CNN(name="new", num_classes = 5)
