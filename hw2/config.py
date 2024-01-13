@@ -12,17 +12,17 @@ DOMAIN_PARAMS = {
 DATA_PARAMS = {
     'use_weighted_sampler': False,
     'resample': True,
-    'train_class_weights': torch.tensor([0.7,0.4,0.4,0.4,1.45], dtype=torch.float32),
+    'train_class_weights': torch.tensor([1.3,1,1,1.3,1], dtype=torch.float32),
     'val_class_weights': torch.tensor([1,1,1,1,1], dtype=torch.float32),
     'train_transform': transforms.Compose([
         random_color_jitter(),
         transforms.RandomInvert(),
         transforms.RandomErasing(),
         transforms.RandomRotation(degrees=15),
-        # transforms.RandomHorizontalFlip()
+        transforms.RandomHorizontalFlip()
     ]),
     'val_split_size': 0.15,
-    'min_size_per_class': 1
+    'min_size_per_class': 300
 }
 
 TRAIN_PARAMS = {
@@ -30,18 +30,18 @@ TRAIN_PARAMS = {
     'learning_rate': 0.0001,
     'batch_size': 64,
     'patience': 5,
-    'score_function': "f1-score",
+    'metrics': 'recall',
     'optim_function': torch.optim.Adam,
     'weight_decay': 0.001,
     'loss_function': nn.CrossEntropyLoss()
 }
 
 MODEL_PARAMS = {
-    'channels': [DOMAIN_PARAMS['input_channels'],5,10,20],
-    'kernels': [11,11,5],
-    'strides': [1,1,1],
-    'pool_kernels': [2,2,2],
-    'pool_strides': [2,2,2],
-    'fc_dims': [720,256,DOMAIN_PARAMS['num_classes']],
-    'dropout': 0.25
+    'channels': [DOMAIN_PARAMS['input_channels'],10,20],
+    'kernels': [9,5],
+    'strides': [3,1],
+    'pool_kernels': [2,2],
+    'pool_strides': [2,2],
+    'fc_dims': [500,DOMAIN_PARAMS['num_classes']],
+    'dropout': 0.1
 }

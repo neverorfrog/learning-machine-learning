@@ -150,8 +150,8 @@ class ImageDataset(Dataset):
 
         return img, label
     
-from imblearn.over_sampling import SMOTE
-from imblearn.under_sampling import EditedNearestNeighbours
+from imblearn.over_sampling import SMOTE, ADASYN
+from imblearn.under_sampling import EditedNearestNeighbours, RepeatedEditedNearestNeighbours
 from imblearn.combine import SMOTEENN
         
 class MyDataset(Dataset):
@@ -184,18 +184,13 @@ class MyDataset(Dataset):
     def resample(self,train_data):
         X = torch.flatten(train_data.samples,start_dim=1)
         y = train_data.labels
-        smote = SMOTE(sampling_strategy='auto', random_state=42)
-        enn = EditedNearestNeighbours(sampling_strategy='all')
-        smote_enn = SMOTEENN(random_state=42, smote=smote, enn=enn)
-        X_res, y_res = smote_enn.fit_resample(X,y)
+        over = ADASYN(sampling_strategy='minority', random_state=42)
+        under = RepeatedEditedNearestNeighbours(sampling_strategy='majority')
+        X_res, y_res = over.fit_resample(X,y)
+        # X_res, y_res = under.fit_resample(X,y)
         X_res = torch.unflatten(torch.from_numpy(X_res), dim=1, sizes=[3,96,96])
         train_data = ImageDataset(samples=X_res, labels=y_res)
         return train_data
-        
-    # pipeline = Pipeline([
-    #     ('smote', SMOTE(sampling_strategy='auto')),
-    #     ('enn', EditedNearestNeighbours(sampling_strategy='auto'))
-    # ])
         
     
     def save(self):

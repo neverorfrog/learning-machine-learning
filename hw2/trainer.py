@@ -10,16 +10,10 @@ class Trainer(Parameters):
     
     def __init__(self, model, data):
         self.loss_function = params['loss_function']
-        self.score_function = params['score_function']
         self.save_parameters()
         
     def evaluate(self):
-        predictions_train = self.model.predict(self.data.train_data.samples)
         predictions_test = self.model.predict(self.data.test_data.samples)
-        # evaluation against training set
-        # print("Train Score: ", self.score_function(predictions_train, self.data.train_data.labels, self.model.num_classes))
-        # evaluation against test set
-        # print("Test Score: ", self.score_function(predictions_test, self.data.test_data.labels, self.model.num_classes))
         print(classification_report(self.data.test_data.labels, predictions_test, digits=3))
         plot_confusion_matrix(self.data.test_data.labels, predictions_test, self.data.classes, normalize=True)
         
@@ -40,7 +34,7 @@ class Trainer(Parameters):
             loss = self.loss_function(logits, labels)
             predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
             report = classification_report(batch[-1],predictions, output_dict=True)
-            score = report['weighted avg']['f1-score']
+            score = report['weighted avg'][params['metrics']]
         return loss, score
             
     

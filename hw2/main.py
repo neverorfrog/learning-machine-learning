@@ -12,7 +12,7 @@ np.random.seed(2000)
 random.seed(2000)
 
 car_env = CarEnv()
-dataset = MyDataset(load=True)
+dataset = MyDataset(load=False)
 dataset.summarize('train')
 
 cnn = CNN(name="new", num_classes = 5)
