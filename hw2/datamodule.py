@@ -187,7 +187,7 @@ class MyDataset(Dataset):
         y = train_data.labels
         over = SMOTE(sampling_strategy='not majority', random_state=42)
         under = EditedNearestNeighbours(sampling_strategy='all')
-        combined = SMOTEENN()
+        combined = SMOTEENN(random_state=42)
         # X_res, y_res = over.fit_resample(X,y)
         # X_res, y_res = under.fit_resample(X,y)
         X_res, y_res = combined.fit_resample(X,y)

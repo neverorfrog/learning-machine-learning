@@ -10,10 +10,20 @@ from torch.utils.data import random_split
 
 class Trainer():
     """The base class for training models with data"""   
-    def evaluate(self,model,data):
-        predictions_test = model.predict(data.test_data.samples)
-        print(classification_report(data.test_data.labels, predictions_test, digits=3))
-        plot_confusion_matrix(data.test_data.labels, predictions_test, data.classes, normalize=True)
+    def evaluate(self,model,data,show=True):
+        with torch.no_grad():
+            predictions_test = model.predict(data.test_data.samples)
+            predictions_train = model.predict(data.train_data.samples)
+            predictions_val = model.predict(data.val_data.samples)
+        report_test = classification_report(data.test_data.labels, predictions_test, digits=3, output_dict=True)
+        report_train = classification_report(data.train_data.labels, predictions_train, digits=3, output_dict=True)
+        report_val = classification_report(data.val_data.labels, predictions_val, digits=3, output_dict=True)
+        if show: 
+            print(report_test)
+            plot_confusion_matrix(data.test_data.labels, predictions_test, data.classes, normalize=True)
+        model.test_scores.append(report_test['weighted avg'][params['metrics']])
+        model.train_scores.append(report_train['weighted avg'][params['metrics']])
+        model.val_scores.append(report_val['weighted avg'][params['metrics']])
         
     def train_step(self,model,batch): #forward propagation
         inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
@@ -60,12 +70,12 @@ class Trainer():
         epoch_loss /= len(val_dataloader) 
         epoch_score /= len(val_dataloader)
         print(f"EPOCH {epoch} SCORE: {epoch_score:.3f} LOSS: {epoch_loss:.3f}")  
+        model.save()
         
         # Early stopping mechanism     
         if epoch_score < self.best_score and epoch_loss > self.best_loss:
             self.worse_epochs += 1
         else:
-            model.save()
             self.best_score = max(epoch_score, self.best_score)
             self.best_loss = min(epoch_loss, self.best_loss)
             self.worse_epochs = 0
@@ -91,16 +101,20 @@ class Trainer():
         optim = params['optim_function'](model.parameters(), lr=learning_rate, weight_decay=params['weight_decay'])
         self.loss_function = params['loss_function']
             
+        model.test_scores = []
+        model.train_scores = []
         max_epochs = params['max_epochs']   
         for epoch in range(1, max_epochs + 1):
             finished = self.fit_epoch(epoch, model, optim, train_dataloader, val_dataloader)  
+            self.evaluate(model, data, show=False)
             if finished: break 
+        self.evaluate(model, data)
             
 class EnsembleTrainer(Trainer):
     def fit(self, models: Ensemble, data: Dataset):
         for i in range(len(models)):
             # Splitting the dataset into a new random subset for each model
-            new_train_data, _, new_train_labels, _ = data.split_train(data.train_data, ratio=0.3)
+            new_train_data, _, new_train_labels, _ = data.split_train(data.train_data, ratio=0.15)
             new_data = MyDataset(samples=new_train_data, labels=new_train_labels)
             new_data.summarize('train')
             print(f"Model {i+1}")

@@ -16,16 +16,35 @@ car_env = CarEnv()
 dataset = MyDataset(load=False)
 dataset.summarize('train')
 
-# model = Ensemble("new", num_classes=5)
-# trainer = EnsembleTrainer()
+names = []
+# names.append('nothing')
+# names.append('vanilla')
+# names.append('with weighted sampling')
+# names.append('smoteenn')
+names.append('no dropout')
+# names.append('deeper')
 
-model = CNN("new",num_classes=5)
-trainer = Trainer()
+complete_plot = False
+train_model = False
 
-start_time = time.time()
-trainer.fit(model,dataset)
-end_time = time.time()
-print(f'Training time: {end_time - start_time}')
-model.load("new")
-EnsembleTrainer().evaluate(model,dataset)
-car_env.play(model)
+for name in names:
+    model = CNN(name,num_classes=5)
+    trainer = Trainer()
+
+    start_time = time.time()
+    if not train_model:
+        model.load(name)
+    else:
+        trainer.fit(model,dataset)
+    model.training_time = time.time() - start_time
+
+    plt.plot(model.test_scores, label=f'{name} - test scores')
+    if complete_plot:
+        plt.plot(model.train_scores, label=f'{name} - train scores')
+        plt.plot(model.val_scores, label=f'{name} - val scores')
+    # car_env.play(model)
+    trainer.evaluate(model, dataset)
+plt.legend()
+plt.ylabel('score')
+plt.xlabel('epoch')
+plt.show()

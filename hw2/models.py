@@ -1,4 +1,5 @@
 import os
+from matplotlib import pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,6 +13,10 @@ class Classifier(nn.Module, Parameters):
     def __init__(self, name, num_classes, bias=True):
         super().__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.test_scores = []
+        self.train_scores = []
+        self.val_scores = []
+        self.training_time = 0
         self.save_parameters() #saves as class fields the parameters of the constructor
 
     def forward(self, X):
@@ -24,13 +29,31 @@ class Classifier(nn.Module, Parameters):
         path = os.path.join("models",self.name)
         if not os.path.exists(path): os.mkdir(path)
         torch.save(self.state_dict(), open(os.path.join(path,"model.pt"), "wb"))
+        torch.save(self.test_scores, open(os.path.join(path,"test_scores.pt"), "wb")) 
+        torch.save(self.train_scores, open(os.path.join(path,"train_scores.pt"), "wb"))
+        torch.save(self.val_scores, open(os.path.join(path,"val_scores.pt"), "wb"))
+        torch.save(self.training_time, open(os.path.join(path,"training_time.pt"), "wb"))
         print("MODEL SAVED!")
 
     def load(self, name):
         path = os.path.join("models",name)
         self.load_state_dict(torch.load(open(os.path.join(path,"model.pt"),"rb")))
+        self.test_scores = torch.load(open(os.path.join(path,"test_scores.pt"),"rb"))
+        self.train_scores = torch.load(open(os.path.join(path,"train_scores.pt"),"rb"))
+        self.val_scores = torch.load(open(os.path.join(path,"val_scores.pt"),"rb"))
+        self.training_time = torch.load(open(os.path.join(path,"training_time.pt"),"rb"))
         self.eval()
         print("MODEL LOADED!")
+        
+    def plot(self, name, complete=False):        
+        plt.plot(self.test_scores, label=f'{name} - test scores')
+        if complete:
+            plt.plot(self.train_scores, label=f'{name} - train scores')
+            plt.plot(self.val_scores, label=f'{name} - val scores')
+        plt.legend()
+        plt.ylabel('score')
+        plt.xlabel('epoch')
+        plt.show()
     
 
 class CNN(Classifier):

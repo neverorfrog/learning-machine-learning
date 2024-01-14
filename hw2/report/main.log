@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2023.12.30)  14 JAN 2024 16:58
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2023.12.30)  14 JAN 2024 23:50
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -190,25 +190,71 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 ]) [1
 
 
-] [2]
+]
+Overfull \hbox (42.54037pt too wide) in paragraph at lines 110--116
+\TU/lmr/m/n/12 weighted resampling techniques. This can be achieved by torch.data.WeightedRandomSampler.
+ []
+
+[2]
+File: figures/compare.png Graphic file (type bmp)
+<figures/compare.png>
+
+Overfull \hbox (24.0148pt too wide) in paragraph at lines 153--154
+[][] 
+ []
+
+
+Overfull \hbox (3.08063pt too wide) in paragraph at lines 157--159
+[]\TU/lmr/m/n/12 Anytime an image is sampled, these transforms are applied, resulting in a completely
+ []
+
+[3] [4]
+File: figures/deeper.png Graphic file (type bmp)
+<figures/deeper.png>
+
+Overfull \hbox (24.0148pt too wide) in paragraph at lines 237--238
+[][] 
+ []
+
+[5]
+File: figures/dropout.png Graphic file (type bmp)
+<figures/dropout.png>
+
+Overfull \hbox (24.0148pt too wide) in paragraph at lines 244--245
+[][] 
+ []
+
+[6]
+File: figures/dropout_confusion.png Graphic file (type bmp)
+<figures/dropout_confusion.png>
+
+Overfull \hbox (24.0148pt too wide) in paragraph at lines 257--258
+[][] 
+ []
+
+[7]
+File: figures/no_dropout_confusion.png Graphic file (type bmp)
+<figures/no_dropout_confusion.png>
+
+Overfull \hbox (24.0148pt too wide) in paragraph at lines 262--263
+[][] 
+ []
+
+[8] [9]
 No file main.bbl.
-
-Package caption Warning: Unused \captionsetup[figure] on input line 14.
-See the caption package documentation for explanation.
-
-[3] (./main.aux (./title.aux))
+[10] (./main.aux (./title.aux))
  ***********
 LaTeX2e <2023-11-01>
 L3 programming layer <2023-12-11>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 3163 strings out of 474832
- 57849 string characters out of 5759704
+ 3220 strings out of 474832
+ 59354 string characters out of 5759704
  1928106 words of memory out of 5000000
- 25245 multiletter control sequences out of 15000+600000
- 561806 words of font info for 59 fonts, out of 8000000 for 9000
+ 25294 multiletter control sequences out of 15000+600000
+ 561814 words of font info for 60 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  57i,5n,65p,247b,356s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.pdf (4 pages).
+Output written on main.pdf (11 pages).
