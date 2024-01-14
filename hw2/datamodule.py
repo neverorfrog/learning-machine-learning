@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 from torchvision import io
 from config import DATA_PARAMS as params
 from torch.utils.data import WeightedRandomSampler
-from PIL import Image
 
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2**32
@@ -49,7 +48,7 @@ class Dataset(Parameters):
         
         return new_train_data, val_data, new_train_labels, val_labels
               
-    def summarize(self, split):
+    def summarize(self, split = None):
         # gathering data
         if split == 'train':
             data = self.train_data
@@ -57,6 +56,8 @@ class Dataset(Parameters):
             data = self.test_data
         elif split == 'val':
             data = self.val_data
+        else:
+            data = self
         
         # summarizing
         print(f'N Examples: {len(data.samples)}')
@@ -159,7 +160,8 @@ class MyDataset(Dataset):
         #initializaing from folders of images
         if load is False:
             if samples is not None and labels is not None:
-                super().__init__(load=False, train_data=ImageDataset(samples=samples,labels=labels))
+                train_dataset = ImageDataset(samples=samples,labels=labels)
+                test_dataset = None
             else:
                 #train split
                 train_dataset = ImageDataset("data/train")
@@ -169,22 +171,21 @@ class MyDataset(Dataset):
                 #test split
                 test_dataset = ImageDataset("data/test")
                 
-                #validation split
-                train_samples, val_samples, train_labels, val_labels = self.split_train(train_dataset,ratio=params['val_split_size'])
-                train_dataset = ImageDataset(samples=train_samples, labels=train_labels, transform=params['train_transform'])
-                val_dataset = ImageDataset(samples=val_samples, labels=val_labels)
-                
                 if params['resample']:
                     train_dataset = self.resample(train_dataset)
-                    
-                super().__init__(load,train_data=train_dataset, val_data=val_dataset, test_data=test_dataset)
+            
+            # Train/Val Split
+            train_samples, val_samples, train_labels, val_labels = self.split_train(train_dataset,ratio=params['val_split_size'])
+            train_dataset = ImageDataset(samples=train_samples, labels=train_labels, transform=params['train_transform'])
+            val_dataset = ImageDataset(samples=val_samples, labels=val_labels)        
+            super().__init__(load,train_data=train_dataset, val_data=val_dataset, test_data=test_dataset)
         elif load is True:
             super().__init__(load)
             
     def resample(self,train_data):
         X = torch.flatten(train_data.samples,start_dim=1)
         y = train_data.labels
-        over = ADASYN(sampling_strategy='minority', random_state=42)
+        over = SMOTE(sampling_strategy='not majority', random_state=42)
         under = RepeatedEditedNearestNeighbours(sampling_strategy='majority')
         X_res, y_res = over.fit_resample(X,y)
         # X_res, y_res = under.fit_resample(X,y)

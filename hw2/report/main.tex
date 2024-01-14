@@ -50,19 +50,18 @@ data leakage).
     - Class 4: 369 (5.7936881771078665)
 \end{verbatim}
 
-Some comments: the dataset is highly imbalanced. There are 
+Some comments: the dataset is highly imbalanced. More specifically, the least
+represented class is the one that represents the command "brake" on the track.
+The anatomy of the dataset is the most important problem to solve in this task.
+It will be addressed in an appropriate section.
 
 \newpage
 
-\subsection{Preprocessing for evaluation}
-
-
-
 \section{Model}
 
-Different approaches can be used to solve this problem. We will treat mainly 4
-models: KNN, SVM (linear and nonlinear), Gaussian Naive Bayes and Softmax
-Regression. They will be compared based on the same train-test split.
+The Model is a CNN, since we have to classify images. The choice is to implement
+a pretty standard CNN, with 3 convolutional layers, 3 pooling layers and 3 batch
+normalization layers. The used 
 
 \subsection{KNN}
 

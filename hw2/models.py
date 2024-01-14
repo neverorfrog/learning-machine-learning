@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import torch.nn as nn
 from training_utils import Parameters
@@ -87,3 +88,27 @@ class CNN(Classifier):
         # Fully Connected Layers
         x = torch.flatten(x,start_dim=1)
         return self.fc(x)
+    
+    
+class Ensemble(Classifier):
+    def __init__(self, name, num_classes):
+        super().__init__(name, num_classes, bias=True)
+        
+        self.models = []
+        for i in range(3):
+            self.models.append(CNN(name="new", num_classes=num_classes))
+            
+    def __getitem__(self, index):
+        return self.models[index]
+    
+    def __len__(self):
+        return len(self.models)
+    
+    def predict(self, X):
+        predictions = torch.empty(size=(3,len(X),self.num_classes))
+        for i in range(len(self)):
+            predictions[i,:] = self.models[i](X)
+        predictions = torch.mean(predictions, axis=0)
+        predictions = torch.softmax(predictions, dim=1).argmax(dim=-1) #shape = (m)
+        return predictions
+        
