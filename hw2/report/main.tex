@@ -32,7 +32,7 @@
 \newpage
 
 
-\section{Data visualization and preprocessing}
+\section{Introduction}
 
 First of all, it could be useful to gain some insight one how the dataaset is
 made. The available data is already split into training and testing set. We
@@ -50,71 +50,122 @@ data leakage).
     - Class 4: 369 (5.7936881771078665)
 \end{verbatim}
 
-Some comments: the dataset is highly imbalanced. More specifically, the least
-represented class is the one that represents the command "brake" on the track.
-The anatomy of the dataset is the most important problem to solve in this task.
-It will be addressed in an appropriate section.
+Some comments: the dataset is highly imbalanced. That needs to be addressed
+accordingly. The main two problems to address are:
+
+\begin{itemize}
+    \item Model architecture
+    \item Training process
+    \begin{itemize}
+        \item Class imbalance mitigation
+        \item Optimization choice
+        \item Performance metrics choice
+    \end{itemize}
+\end{itemize}
+
+\section{Model Architecture}
+
+The Model is a CNN, since we have to classify images. The first and foremost
+choice regarding cnn model architecture is surely how deep it has to be and how
+big the kernel need to be. Since the images are not that big, a reasonably small
+cnn would be enough, since a too deep one would either overfit on training data,
+or waste computational resources without gaining any improved performance.
+Although, also a too small model would not be able to adequately catch the
+features of the image. Also, kernels size is very important. A too big kernel
+would compromise computational efficiency, but the size has to be adapted to the
+tiype of features the convolution needs to to capture. To corroborate these
+concepts we will compare some cnns with a different number of convolutional
+layers. Each cnn has 2 fully connected layers at the end. Each list entry
+indicates the dimension for the convolutional layer (from 1 to N). The kernel
+size 0 indicates the number of channels of the input image. This training
+results are all captured after 40 epochs.
+
+\begin{itemize}
+    \item N = 3
+    \begin{verbatim}
+        'channels': [3,8,16,32,64],
+        'kernels': [5,5,5,5],
+        'strides': [1,1,1,5],
+        'pool_kernels': [2,2,2,2],
+        'pool_strides': [2,2,2,2]
+
+        precision    recall  f1-score   accuracy
+          0.702     0.623     0.644      0.623 
+
+        Total reward: 903.86
+        Frames: 894
+        Training time: 300.85
+    \end{verbatim}
+    \item N = 6 
+    \begin{verbatim}
+        'channels': [3,10,16,32,64,64,64,64,64],
+        'kernels': [5,5,5,3,3,3,64,64],
+        'strides': [1,1,1,1,1,1,1,1],
+        'pool_kernels': [2,2,2,2,2,2],
+        'pool_strides': [2,1,2,1,2,2],
+
+        precision  recall  f1-score   accuracy
+          0.699    0.638     0.653      0.638
+
+        Tile points: 874.69
+        Training time:
+    \end{verbatim}
+\end{itemize}
+
+\subsection{Batch normalization layers}
+
+\subsection{Dropout layer}
+
+\subsection{Ensemble}
 
 \newpage
 
-\section{Model}
+\section{Training process}
 
-The Model is a CNN, since we have to classify images. The choice is to implement
-a pretty standard CNN, with 3 convolutional layers, 3 pooling layers and 3 batch
-normalization layers. The used 
+There are some important issues to address, which
+are to some extent independent from the model we use to classify. First of all,
+to mitigate class imbalance we could apply:
+\begin{itemize}
+    \item Data augmentation (useful in any case to increase generalization)
+    \item Different sampling techniques
+    \begin{itemize}
+        \item Upsampling/Downsampling
+        \item Weighted resampling
+    \end{itemize}
+\end{itemize}
 
-\subsection{KNN}
+\subsection{Sampling techniques}
 
-\begin{verbatim} [Dataset 1]
-\end{verbatim}
+In order to mitigate class imbalance, one could try to rebalance the dataset by
+using weighted resampling techniques.
 
-\begin{figure}[H]
-    \includegraphics{figures/knn_plain_cm.png}
-    \caption{Knn Dataset 1}
-\end{figure}
+\subsection{Data augmentation}
 
-\begin{verbatim}[Dataset 2]
-\end{verbatim}
+This technique is widely used with images. It exploits the invariance property
+of images to enhance generalization properties of neural networks. In our case
+it is particularly useful, because it allows us to "reuse" the same sample
+multiple times and make it look new to the network by augmenting its features.
+The transformation I used are these three from the torchvision package, plus a
+random color jitter implemented separately. I also tried
+RandomHorizontalFlipping, but I noticed actually worse conditions, maybe because
+the images are sensitive to the horizontal orientation (for turning left and
+right), so randomly flipping them would mean introducing noise to the labels.
 
 \begin{verbatim}
+    transforms.RandomInvert(),
+    transforms.RandomErasing(),
+    transforms.RandomRotation(degrees=5),
 \end{verbatim}
 
-\subsection{Softmax Regression}
+\subsection{Weighted random resampling}
 
-\begin{verbatim}[Logistic Regression on Standardized Dataset 2]
-\end{verbatim}
+To rebalance classes, we could sample differently the training data, maybe
+according to some weights. 
 
-\subsection{SVM}
+\section{Final Considerations}
 
-The last method that was tried is Support Vector Machines. This method is still
-parametric and linear and practically tries to maximise a margin between
-samples. 
-
-\begin{verbatim}[Linear SVM on Dataset 1]
-\end{verbatim}
-
-Linear SVM does slightly worse than KNN with 5 neighbors, and it takes also
-considerably more time to train the SVM classifier. Instead, by using a
-polynomial kernel of degree 3 we obtain a slightly better performance.
-
-\begin{verbatim}[Poly SVM Dataset 1]
-\end{verbatim}
-
-SVM with 3-degree polynomial kernel has a better performance than linear SVM and
-also KNN. Although, it takes slightly more time to train it. Also, when
-increasing the degree of the polynomial, performance decreases, which means the
-classifier would overfit on training data.
-
-\begin{verbatim}[Poly SVM Dataset 2]
-\end{verbatim}
-
-\subsection{Considerations}
-
-In the end KNN and Poly SVM were the best methods on both datasets. KNN has the
-advantage of taking less computational during training time, while it costs
-slighly more during inference. Conversely, SVM has slighly higher accuracy but
-it takes a little bit more to train it. In both cases the main problem is the
-precision and recall of classes 3 and 5, which often get exchanged.
+In the end, after different trials I was able to achieve the completion of a
+full lap through manual tuning of class weights 
 
 \bibliographystyle{unsrt}
 \bibliography{ref}

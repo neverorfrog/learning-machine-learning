@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2023.12.30)  14 JAN 2024 01:51
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2023.12.30)  14 JAN 2024 16:58
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -190,11 +190,12 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 ]) [1
 
 
-]
-File: figures/knn_plain_cm.png Graphic file (type bmp)
-<figures/knn_plain_cm.png>
- [2]
+] [2]
 No file main.bbl.
+
+Package caption Warning: Unused \captionsetup[figure] on input line 14.
+See the caption package documentation for explanation.
+
 [3] (./main.aux (./title.aux))
  ***********
 LaTeX2e <2023-11-01>
@@ -202,10 +203,10 @@ L3 programming layer <2023-12-11>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 3180 strings out of 474832
- 58251 string characters out of 5759704
- 1923106 words of memory out of 5000000
- 25259 multiletter control sequences out of 15000+600000
+ 3163 strings out of 474832
+ 57849 string characters out of 5759704
+ 1928106 words of memory out of 5000000
+ 25245 multiletter control sequences out of 15000+600000
  561806 words of font info for 59 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  57i,5n,65p,247b,356s stack positions out of 10000i,1000n,20000p,200000b,200000s

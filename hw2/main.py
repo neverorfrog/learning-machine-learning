@@ -10,13 +10,22 @@ import random
 torch.manual_seed(2000)
 np.random.seed(2000)
 random.seed(2000)
+import time
 
 car_env = CarEnv()
 dataset = MyDataset(load=False)
 dataset.summarize('train')
 
-ensemble = Ensemble("new_ens", num_classes=5)
-EnsembleTrainer().fit(ensemble,dataset)
-# ensemble.load(name="new_ens")
-EnsembleTrainer().evaluate(ensemble,dataset)
-car_env.play(ensemble)
+# model = Ensemble("new", num_classes=5)
+# trainer = EnsembleTrainer()
+
+model = CNN("new",num_classes=5)
+trainer = Trainer()
+
+start_time = time.time()
+trainer.fit(model,dataset)
+end_time = time.time()
+print(f'Training time: {end_time - start_time}')
+model.load("new")
+EnsembleTrainer().evaluate(model,dataset)
+car_env.play(model)

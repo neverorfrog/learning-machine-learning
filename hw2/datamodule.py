@@ -186,9 +186,11 @@ class MyDataset(Dataset):
         X = torch.flatten(train_data.samples,start_dim=1)
         y = train_data.labels
         over = SMOTE(sampling_strategy='not majority', random_state=42)
-        under = RepeatedEditedNearestNeighbours(sampling_strategy='majority')
-        X_res, y_res = over.fit_resample(X,y)
+        under = EditedNearestNeighbours(sampling_strategy='all')
+        combined = SMOTEENN()
+        # X_res, y_res = over.fit_resample(X,y)
         # X_res, y_res = under.fit_resample(X,y)
+        X_res, y_res = combined.fit_resample(X,y)
         X_res = torch.unflatten(torch.from_numpy(X_res), dim=1, sizes=[3,96,96])
         train_data = ImageDataset(samples=X_res, labels=y_res)
         return train_data
