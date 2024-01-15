@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/home/flavio/code/main')
 
-from core.datamodule import Dataset
+from core.datamodule import ClassificationDataset, Dataset
 import numpy as np
 import torch
 import os
@@ -43,7 +43,7 @@ class ImageDataset(Dataset):
         return img, label
     
         
-class MyDataset(Dataset):
+class MyDataset(ClassificationDataset):
     def __init__(self, load: bool, params: dict, samples=None, labels=None):
         self.params = params
         #initializaing from folders of images

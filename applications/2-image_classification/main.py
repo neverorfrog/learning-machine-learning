@@ -21,34 +21,34 @@ dataset = MyDataset(load=False, params=DATA_PARAMS)
 dataset.summarize('train')
 
 names = []
-# names.append('nothing')
+names.append('boh')
 # names.append('vanilla')
 # names.append('with weighted sampling')
 # names.append('smoteenn')
 # names.append('no dropout')
 # names.append('deeper')
 
-# complete_plot = False
-# train_model = False
+complete_plot = False
+train_model = True
 
-# for name in names:
-#     model = CNN(name,num_classes=5)
-#     trainer = ClassifierTrainer(params=TRAIN_PARAMS)
+for name in names:
+    model = CNN(name,num_classes=5)
+    trainer = ClassifierTrainer(params=TRAIN_PARAMS)
 
-#     start_time = time.time()
-#     if not train_model:
-#         model.load(name)
-#     else:
-#         trainer.fit(model,dataset)
-#     model.training_time = time.time() - start_time
+    start_time = time.time()
+    if not train_model:
+        model.load(name)
+    else:
+        trainer.fit(model,dataset)
+    model.training_time = time.time() - start_time
 
-#     plt.plot(model.test_scores, label=f'{name} - test scores')
-#     if complete_plot:
-#         plt.plot(model.train_scores, label=f'{name} - train scores')
-#         plt.plot(model.val_scores, label=f'{name} - val scores')
-#     # car_env.play(model)
-#     trainer.evaluate(model, dataset)
-# plt.legend()
-# plt.ylabel('score')
-# plt.xlabel('epoch')
-# plt.show()
+    plt.plot(model.test_scores, label=f'{name} - test scores')
+    if complete_plot:
+        plt.plot(model.train_scores, label=f'{name} - train scores')
+        plt.plot(model.val_scores, label=f'{name} - val scores')
+    # car_env.play(model)
+    trainer.evaluate(model, dataset)
+plt.legend()
+plt.ylabel('score')
+plt.xlabel('epoch')
+plt.show()
