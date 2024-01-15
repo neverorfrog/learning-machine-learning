@@ -1,6 +1,16 @@
 import inspect
 import torch
 
+class Parameters:
+    def save_parameters(self, ignore=[]):
+        """Save function arguments into class attributes"""
+        frame = inspect.currentframe().f_back
+        _, _, _, local_vars = inspect.getargvalues(frame)
+        self.hparams = {k:v for k, v in local_vars.items()
+                        if k not in set(ignore+['self']) and not k.startswith('_')}
+        for k, v in self.hparams.items():
+            setattr(self, k, v)
+
 
 class QuadraticLoss:
     def fn(a, y):
@@ -58,18 +68,8 @@ def sigmoid(z):
 def sigmoid_prime(z):
     """Derivative of the sigmoid function."""
     return sigmoid(z)*(1-sigmoid(z))
-
-class HyperParameters:
-    def save_hyperparameters(self, ignore=[]):
-        """Save function arguments into class attributes"""
-        frame = inspect.currentframe().f_back
-        _, _, _, local_vars = inspect.getargvalues(frame)
-        self.hparams = {k:v for k, v in local_vars.items()
-                        if k not in set(ignore+['self']) and not k.startswith('_')}
-        for k, v in self.hparams.items():
-            setattr(self, k, v)
             
-class SGD(HyperParameters):
+class SGD(Parameters):
     """Minibatch stochastic gradient descent."""
     def __init__(self, params, lr):
         self.save_hyperparameters()

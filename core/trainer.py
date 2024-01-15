@@ -1,88 +1,106 @@
-from core.utils import HyperParameters
 import torch
-from core.plotting import *
 import numpy as np
+from core.utils import Parameters
+from sklearn.metrics import classification_report
+from core.plotting_utils import plot_confusion_matrix
 
-class Trainer(HyperParameters):
-    """The base class for training models with data"""
-    def __init__(self, max_epochs, plot_train_per_epoch = 2, plot_valid_per_epoch = 2):
-        self.save_hyperparameters()
-        self.board = ProgressBoard()
-
-    def prepare_data(self, data):
-        self.batch_size = data.batch_size
-        self.train_dataloader = data.train_dataloader()
-        self.val_dataloader = data.val_dataloader()
-        self.num_train_batches = len(self.train_dataloader)
-        self.num_val_batches = (len(self.val_dataloader) if self.val_dataloader is not None else 0)
-
-    def get_data(self, data, batch):
-        X = torch.tensor(*batch[:-1]).flatten(start_dim = 1, end_dim = -1) #one sample on each row -> X.shape = (m, d_in)
-        Y = batch[-1].type(torch.float32)# labels -> shape = (m)
-        return X,Y
+class Trainer(Parameters):
+    """The base class for training models with data"""   
+    def __init__(self, params: dict):
+        self.save_parameters()
         
-    def prepare_model(self, model):
-        model.trainer = self
-        self.board.xlim = [0, self.max_epochs]
-        self.model = model
-
-    # That is the effective training cycle in which the epochs pass by
-    def fit(self, model, data, plot = True, scratch = False):
-        self.prepare_data(data)
-        self.prepare_model(model)
-        self.optim = self.model.configure_optimizers()
-        self.epoch = 0
-        self.train_batch_idx = 0
-        self.val_batch_idx = 0
-        accuracy = 0
-        early_stopping = False
-        for self.epoch in range(self.max_epochs): # That is the cycle in each epoch where iterations (as many as minibatches) pass by
-            if early_stopping == True: break
-            
-            #Training
-            self.model.train() 
-            for batch in self.train_dataloader:
-                #Forward propagation
-                X,Y = self.get_data(data, batch)
-                n = len(X) * self.num_train_batches
-                loss = self.model.training_step(X,Y,n,plot) #loss is a scalar
-                self.train_batch_idx += 1
-                #Backward Propagation
-                if not scratch:
-                    self.optim.zero_grad()
-                    with torch.no_grad():
-                        loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
-                        self.optim.step() 
-                    
-            
-            #Validation
-            if self.val_dataloader is None:
-                return
-            self.model.eval()
-            stuck_epochs = 0
-            for batch in self.val_dataloader:
-                X,Y = self.get_data(data, batch)
-                old_accuracy = accuracy
-                accuracy = self.model.validation_step(X,Y,plot)
-                delta = accuracy - old_accuracy
-                stuck_epochs = (stuck_epochs+1) if delta < 0.01 else 0
-                if stuck_epochs == 10: early_stopping = True
-                self.val_batch_idx += 1
-                
-        # Print accuracy on the test set at the end of all training 
-        for batch in torch.utils.data.DataLoader(data.test_data, len(data.test_data)):
-            X,Y = self.get_data(data, batch)
-        test_accuracy = self.model.accuracy(X,Y)
-        print(f"Accuracy: {test_accuracy}")
-        
+    def train_step(self,model,batch): #forward propagation
+        inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+        labels = batch[-1].type(torch.long)# labels -> shape = (m)
+        logits = model(inputs)
+        loss = self.loss_function(logits, labels)
+        return loss
     
-    def plot(self, key, value, device, train):
-        """Plot a point in animation."""
-        self.board.xlabel = 'epoch'
-        if train:
-            x = self.train_batch_idx / self.num_train_batches
-            n = self.num_train_batches / self.plot_train_per_epoch
+    def eval_step(self,model,batch):
+        with torch.no_grad():
+            inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+            labels = batch[-1].type(torch.long) # labels -> shape = (m)
+            logits = model(inputs)
+            loss = self.loss_function(logits, labels)
+        return loss,0
+        
+    def fit_epoch(self, epoch, model, optim, train_dataloader, val_dataloader):
+        #Training
+        model.train() 
+        for batch in train_dataloader:
+            #Forward propagation
+            loss = self.train_step(model,batch)
+            #Backward Propagation
+            optim.zero_grad()
+            with torch.no_grad():
+                loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
+                optim.step() 
+                
+        #Validation
+        model.eval()
+        epoch_loss = 0           
+        epoch_score = 0
+        for batch in val_dataloader:
+            #Forward propagation
+            loss, score = self.eval_step(model,batch)
+            #Logging
+            epoch_loss += loss.item()
+            epoch_score += score
+            
+        epoch_loss /= len(val_dataloader) 
+        epoch_score /= len(val_dataloader)
+        print(f"EPOCH {epoch} SCORE: {epoch_score:.3f} LOSS: {epoch_loss:.3f}")  
+        model.save()
+        
+        # Early stopping mechanism     
+        if epoch_score < self.best_score and epoch_loss > self.best_loss:
+            self.worse_epochs += 1
         else:
-            x = self.epoch + 1
-            n = self.num_val_batches / self.plot_valid_per_epoch
-        self.board.draw(x, value.to(device).detach().numpy(),('train_' if train else 'val_') + key, every_n = int(n))
+            self.best_score = max(epoch_score, self.best_score)
+            self.best_loss = min(epoch_loss, self.best_loss)
+            self.worse_epochs = 0
+        if self.worse_epochs == self.patience: 
+            print(f'Early stopping at epoch {epoch} due to no improvement.')  
+            return True
+        
+    # That is the effective training cycle in which the epochs pass by
+    def fit(self, model, data):
+        #stuff for dataset
+        self.batch_size = self.params['batch_size']
+        train_dataloader = data.train_dataloader(self.batch_size)
+        val_dataloader = data.val_dataloader(self.batch_size)
+        
+        #stuff for early stopping
+        self.patience = self.params['patience']
+        self.worse_epochs = 0
+        self.best_score = 0
+        self.best_loss = np.inf
+        
+        self.lr = self.params['learning_rate']
+        optim = self.params['optim_function'](model.parameters(), lr=self.lr, weight_decay=self.params['weight_decay'])
+        self.loss_function = self.params['loss_function']
+        
+        model.test_scores = []
+        model.train_scores = []
+        max_epochs = self.params['max_epochs']   
+        for epoch in range(1, max_epochs + 1):
+            finished = self.fit_epoch(epoch, model, optim, train_dataloader, val_dataloader)  
+            # model.evaluate(data, show=False) # TODO
+            if finished: break 
+        # self.evaluate(model, data)
+    
+
+class ClassifierTrainer(Trainer):
+    def __init__(self, params: dict):
+        super().__init__(params)
+    
+    def eval_step(self,model,batch):
+        with torch.no_grad():
+            inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+            labels = batch[-1].type(torch.long)# labels -> shape = (m)
+            logits = model(inputs)
+            loss = self.loss_function(logits, labels)
+            predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
+            report = classification_report(batch[-1],predictions, output_dict=True)
+            score = report['weighted avg'][self.params['metrics']]
+        return loss, score 
