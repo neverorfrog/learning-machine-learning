@@ -4,33 +4,33 @@ from core.utils import Parameters
 from sklearn.metrics import classification_report
 from core.plotting_utils import plot_confusion_matrix
 
-class Trainer(Parameters):
+class Trainer():
     """The base class for training models with data"""   
     def __init__(self, params: dict):
-        self.save_parameters()
+        self.params = params
         
-    def train_step(self,model,batch): #forward propagation
-        inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
-        labels = batch[-1].type(torch.long)# labels -> shape = (m)
-        logits = model(inputs)
-        loss = self.loss_function(logits, labels)
-        return loss
+    # def train_step(self,model,batch): #forward propagation
+    #     inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+    #     labels = batch[-1].type(torch.long)# labels -> shape = (m)
+    #     logits = model(inputs)
+    #     loss = self.loss_function(logits, labels)
+    #     return loss
     
-    def eval_step(self,model,batch):
-        with torch.no_grad():
-            inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
-            labels = batch[-1].type(torch.long) # labels -> shape = (m)
-            logits = model(inputs)
-            loss = self.loss_function(logits, labels)
-        return loss,0
+    # def eval_step(self,model,batch):
+    #     with torch.no_grad():
+    #         inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+    #         labels = batch[-1].type(torch.long) # labels -> shape = (m)
+    #         logits = model(inputs)
+    #         loss = self.loss_function(logits, labels)
+    #     return loss,0
         
     def fit_epoch(self, epoch, model, optim, train_dataloader, val_dataloader):
         #Training
         model.train() 
         for batch in train_dataloader:
-            #Forward propagation
-            loss = self.train_step(model,batch)
-            #Backward Propagation
+            # Forward propagation
+            loss = model.train_step(batch)
+            # Backward Propagation
             optim.zero_grad()
             with torch.no_grad():
                 loss.backward() #here we calculate the chained derivatives (every parameters will have .grad changed)
@@ -78,7 +78,7 @@ class Trainer(Parameters):
         
         self.lr = self.params['learning_rate']
         optim = self.params['optim_function'](model.parameters(), lr=self.lr, weight_decay=self.params['weight_decay'])
-        self.loss_function = self.params['loss_function']
+        # self.loss_function = self.params['loss_function']
         
         model.test_scores = []
         model.train_scores = []
@@ -90,17 +90,17 @@ class Trainer(Parameters):
         # self.evaluate(model, data)
     
 
-class ClassifierTrainer(Trainer):
-    def __init__(self, params: dict):
-        super().__init__(params)
+# class ClassifierTrainer(Trainer):
+#     def __init__(self, params: dict):
+#         super().__init__(params)
     
-    def eval_step(self,model,batch):
-        with torch.no_grad():
-            inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
-            labels = batch[-1].type(torch.long)# labels -> shape = (m)
-            logits = model(inputs)
-            loss = self.loss_function(logits, labels)
-            predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
-            report = classification_report(batch[-1],predictions, output_dict=True)
-            score = report['weighted avg'][self.params['metrics']]
-        return loss, score 
+#     def eval_step(self,model,batch):
+#         with torch.no_grad():
+#             inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+#             labels = batch[-1].type(torch.long)# labels -> shape = (m)
+#             logits = model(inputs)
+#             loss = self.loss_function(logits, labels)
+#             predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
+#             report = classification_report(batch[-1],predictions, output_dict=True)
+#             score = report['weighted avg'][self.params['metrics']]
+#         return loss, score 
