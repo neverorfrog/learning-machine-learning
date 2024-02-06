@@ -41,6 +41,6 @@ Step 1 is contained in the red box, aka the learning algorithm. It is executed a
    2. How we evaluate the function (objective function)
    3. How we optimize the function (loss function)
 
-### In one sentence
+## In one sentence
 
-Machine learning is the process of computing a function that has low expected error wrt a loss function
+Supervised machine learning is the process of computing a function that has low expected error with reference to a loss function defined over a dataset
