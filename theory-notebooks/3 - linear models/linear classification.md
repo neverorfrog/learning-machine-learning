@@ -32,6 +32,22 @@
 
 ### Perceptron
 
+ $ h_w(x) = g(w^Tx) = \begin{cases} 1 & \text{if} & w^Tx \geq 0 \\ 0 & \text{if} & w^Tx < 0 \end{cases}$
+
+**How do we predict?**
+
+- We predict by projecting the samples on the vector of weights and looking at the sign of that number $wx$
+- Looking at the sign and deciding is the actication function (which is nonlinear)
+
+#### How do we fit $w$ ?
+
+- We can use squared loss $ E = \frac{1}{2} \sum_{i=1}^n (y_i - wx_i)^2 $
+
+#### Using gradient descent
+
+- At each step we update the weights in the direction of the negative gradient of the loss function
+- Same update rule as with logistic regression
+
 - Comments
   - Iterative scheme
   - Sensitive to initialization and learning rate
