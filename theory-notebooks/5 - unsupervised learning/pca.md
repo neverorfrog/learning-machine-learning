@@ -25,3 +25,20 @@
 
 - In general:
   - We take the first $M$ highest eigenvalues, giving $M$ eigenvectors and get the best basis for projecting the dataset onto a lower dimensional space
+
+- Important:
+  - **PCA does a linear transformation**
+
+## PCA for High-Dimensional Data
+
+- Situation in which $N < D$
+- We simply take the covariance with the product $XX^T$ instead of $X^TX$ and the eigenvalues don't change
+- To find the eigenvectors we left-multiply by $X^T$
+
+## Probabilistic PCA
+
+- We want to represent data $x \in \R^D$ in a reduced space by the variable $z \in \R^M$ assuming a linear relationship from $x$ to $z$
+- We also assume that $z$ obey to gaussian distribution
+- This is a generative model, because :
+  - We estimate the parameters of the gaussians of $z$ through maximum likelihood
+  - We generate $x$ with conditional density $P(x|z)$
