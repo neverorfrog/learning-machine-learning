@@ -12,6 +12,7 @@
   - Encoder takes as input the data $x$ and outputs the low-dim represnetation $z$
   - Decoder takes as input the the low-dim represnetation $z$ and outputs the original data $x$
 - We train them together based on reconstruction loss, but we could then use the two networks on their own
+  - Reconstruction loss $L(x,\hat x)$ is MSE between input and reconstructed input
 - Example: $3D \rightarrow 2D \rightarrow 3D$
   - Input data in 3 dimensions (volume)
   - Latent variables in 2 dimensions (surface)
