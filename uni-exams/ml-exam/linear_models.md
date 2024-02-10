@@ -14,7 +14,43 @@
     - $w \leftarrow w + \eta \phi(x_n)(y(x_n)-\hat y(x_n))^2$
     - Heavily depends on learning rate
 
+### Basic Definitions
+
+- Explain the difference between regression and classification
+  - The difference lies mainly in the function to learn
+  - With regression we have a real valued $f: x \rightarrow \R$
+  - While with classification (k-class classification to be general) we have $f: x \rightarrow \{C_1,...,C_K\}$
+  - So in the first case we have a real number as label, while in the second a K-long vector with all but the k-th element equal to zero, where k is the class which the training sample belongs to
+- Provide a mathematical formulation of linear regression
+  - As stated above, the function to learn is $f: x \rightarrow \R$
+  - If the prediction model is linear, this means that it outputs some value $y(x)=w^Tx$ where $w \in \R^{d}$ is a vector of weights and $x \in \R^d$ is a vector of features
+  - We can measure the performance of the prediction through a loss function over a dataset $D=\{x_n,t_n\}$ defined as the mean squared the error between predictions and labels: $J(w)=\frac{1}{2}\Sigma_n (t_n-y(x_n))^2$
+  - The training makes use of the loss in an iterative manner, namely at each training iteration the weights are changed such that $w \leftarrow w - \eta \nabla J(w)$ where $\eta$ is the learning rate
+- Overfitting in linear regression and how it can be mitigated
+  - Situation in which x is 1-dim
+  - Plot of 9 points dataset that is fitted with a 9 dimensional prediction function
+
+## Linear Classification
+
+### Logistic Regression Basic Definition
+
+- Define mathematically the problem of logistic regression
+  - Logistic Regression solves a problem of binary classification
+  - It means learning a function $f: \R^d \rightarrow \{C_1,C_2\}$
+  - More specifically, logistic regression has to find the weights $w$ so that $\sigma(w^Tx)$ fits the data, where $\sigma(z)=\frac{1}{1+exp(-z)}$ is the logistic function
+
 ## Kernel Methods
+
+### Basic Definition
+
+- Give a short explanation of the kernel trick. What is necessary condition for applying the kernel trick?
+  - Excursus, without Kernel Trick:
+    - Error function: $E(w)=(t-Xw)^T(t-Xw)$ where $X$ has samples on $N$ rows and $t$ is the column vector of $N$ labels
+    - Solution to error minimization: $w^*=(X^TX)^{-1}X^Tt \in \R^{d \times 1}=X^T(XX^T)^{-1}t=X^T\alpha$
+    - In the end $\alpha=K^{-1}t$ where $K \in \R^{N \times N}$ is the Gram matrix where element $(i,j)$ is the dot product between sample $i$ and $j$
+    - So the linear model is rewritten as $y(x)=\Sigma (\alpha_nx_n^Tx)$
+  - The Kernel Trick consists in substituting to the dot product in the inference phase, a different operation that gives a similarity measure between the two vectors
+  - The necessary condition for it to be applicable is that the two vectors ($x_n$ and $x$) have to appear in a dot product, that $k \geq 0$ and that $k$ is symmetric
 
 ### Strings
 
