@@ -7,7 +7,7 @@
   - Backpropagation per se is not a learning algorithm, but just a smart way of propagating the gradient of the loss through the whole network. It happens in two phases: forward and backward pass:
   - Forward pass:
     - This is where the loss is actually computed through inference
-    - Initialization with $a^{[0]} = x \in \R^{d+1}$ 
+    - Initialization with $a^{[0]} = x \in \R^{d+1}$
     - For each layer $l$ from 1 to $L$
       - $z^{[l]} = W^{[l]}a^{[l-1]}$ pre-activations
       - $a^{[l]}=f(z^{[l]})$ where $f$ is the activation

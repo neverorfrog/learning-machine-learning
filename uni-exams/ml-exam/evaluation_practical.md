@@ -15,3 +15,19 @@
   - Linear Regression
   - Decision Trees
 - For one of the models above, explain how the problem can be mitigated
+
+## Performance metrics
+
+- Discuss the statemenet: Accuracy is not always a good performance metric for classification
+  - This is true, especially if we have an unbalanced dataset
+  - For example, let's say we are in a binary classification setting, with dataset made of 900 positive samples and 100 negative samples
+    - Let's suppose we have some stupid algorithm that alway predicts positive
+    - With this dataset the accuracy would be 90%, which would be reasonable if the dataset was balanced
+    - But obviously a previously unseen sample will be classified based on no processing of the features and based on the fact that the accuracy was satisfying
+
+- What are some alternatives to accuracy for unbalanced datasets?
+  - Precision, recall, F1-score and confusion matrix
+  - Recall is defined as the ability avoid false negatives
+    - $R=\frac{TP}{FN+TP}$
+  - Precision is the ability to avoid false positives
+    - $P = \frac{TP}{FP+TP}$

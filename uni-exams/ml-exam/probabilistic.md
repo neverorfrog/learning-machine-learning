@@ -49,3 +49,26 @@ parameters)
     - 1*1 for $\pi_i$
     - 2*3 for $\mu_i$
     - 6 for $\Sigma$
+
+## Sigma
+
+![sigma](images/sigma.png)
+
+1. $P(C_1|x)=\frac{P(x|C_1)P(C_1)}{P(x)}=\frac{P(x|C_1)P(C_1)}{P(x|C_1)P(C_1)+P(x|C_2)P(C_2)}$
+
+- We could in theory compute this if we had the the prior probabilities and the class conditional densities
+- The goal of a generative model is to compute the parameters necessary to obtain the class conditional densities and then compute the posterior through Bayes Rule as stated above
+
+2. $P(C_1|x)=\frac{1}{1+\frac{P(x|C_2)P(C_2)}{P(x|C_1)P(C_1)}}=\frac{1}{1+\exp(\ln(\frac{P(x|C_2)P(C_2)}{P(x|C_1)P(C_1)}))}=\frac{1}{1+\exp(-\ln(\frac{P(x|C_1)P(C_1)}{P(x|C_2)P(C_2)}))}=\frac{1}{1+\exp(-\alpha)}$
+
+- So we stated that the posterior obeys a sigmoid distribution with variable $\alpha$. How can this help us? How do we estimate the gaussian parameters?
+- First question: ff we substitute gaussian distribution to $P(x|C_i)$ in $\alpha$ and do computations, we would get that $\alpha$ is a linear combination, so $\alpha=w^Tx$, where $w$ is function of the gaussian's parameters. This means the posterior is a sigmoid of a linear function.
+- Second question: maximum likelihood, so we maximise the likelihood based on the Bernoulli distribution (generalized by the categorical distribution with multiple classes) $P(t|\pi_k,\mu_k,\Sigma) = \Pi_n \Pi_k [\pi_k N(x_n;\mu_k,\Sigma)]^{t_{nk}}$ where $t_n$ is a one-hot encoded vector
+  - We obtain the parameters of the gaussians by computing $\argmin -log(P(t|\pi_k,\mu_k,\Sigma))$
+- In the end we predict the class of a new sample simply by taking $\argmax_i(P(C_i|x))$
+
+3. The model parameters are the gaussians parameters and the priors. So the dimension is:
+
+- 1 prior
+- 2 means
+- 6 for covariance (3x3 matrix but just 6 independent parameters because of simmetry)

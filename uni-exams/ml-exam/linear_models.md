@@ -39,6 +39,33 @@
   - It means learning a function $f: \R^d \rightarrow \{C_1,C_2\}$
   - More specifically, logistic regression has to find the weights $w$ so that $\sigma(w^Tx)$ fits the data, where $\sigma(z)=\frac{1}{1+exp(-z)}$ is the logistic function
 
+### Perceptron
+
+- Definition
+  - Solves a problem of binary classification
+  - Linear model, so $y=w^Tx$
+  - The class is predicted applying a non-linear function $o$ to $y$ with treshold in 0.5
+  - How is perceptron trained?
+    - Loss function MSE
+    - Gradient descent
+
+### SVM
+
+- Describe the principle of maximal margin use by SVM
+  - Let's suppose we are in a binary classification problem with $f: X \in \R^2 \rightarrow \{+,-\}$
+  - We first need to say what a linear discriminant is for this case: it is an hyperplane in 1 dimension (a line, but in general in $d-1$ dimensions) that, if adequately trained, separates as much as possible samples pertaining to two different classes. In our case the linear discriminant is simply $y=w^Tx$
+  - In words, a margin is defined as the distance from the nearest points from each class to the linear discriminant
+    - We define as distance from the linear discriminant the quantity $\frac{|y(x)|}{|w|}$
+  - If we rescale all the distances from the discriminant we obtain that $|y(x)|=1$ for the closest point to the margin of each class
+  - So, the distance of the closest points for each class can be simply expressed as $\frac{1}{|w|}$
+  - Thus, the maximal margin is found by simply maximising this distance, which means maximising the distance from the closest points to the margin
+    - $w^*=\argmax \frac{1}{|w|}$
+- Why is Maximum Margin preferred for classification?
+  - Because it enhances the probability of correctly classifying a new unseen sample by maximising as much as possible the distance between two classes
+  - It is also robust to outliers
+  - Moreover, the optimization becomes sparse when considering the support vectors (the ones whose margin has to be maximised), so more efficient
+  - Besides, the constraints can also be extended to deal with noise (soft margins)
+
 ## Kernel Methods
 
 ### Basic Definition

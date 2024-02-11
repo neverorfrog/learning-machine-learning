@@ -1,5 +1,24 @@
 # Unsupervised Learning
 
+## GMM
+
+## Definitions
+
+Given and unsupervised dataset $D=\{x_n\}$
+
+- Define the GMM and describe the parameters
+  - GMM aims at computing $P(x)$, the probability of generating a sample $x$
+  - This probability can be expressed by defining a probability distribution which the samples obey to defined as a mixture of gaussians, namely $P(x)=\Sigma \pi_k N(x;\mu_k,\Sigma_k)$
+  - The parameters of the model are:
+    - The priors, proportional to how big the gaussians are
+    - The mean of each gaussian
+    - The covariance of each gaussian, a $d \times d$ matrix if $d$ is the input space
+- Size of GMM if $K=3$ and $d=2$
+  - 2 priors
+  - 3 mean vectors, with 2 parameters each
+  - 3 covariance matrices, with 3 independent parameters each
+  - 17 in total
+
 ## PCA
 
 ### Black\white images

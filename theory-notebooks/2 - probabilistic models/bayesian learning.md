@@ -35,7 +35,7 @@
 
 #### GNB on Text
 
-- OK
+- TODO
 
 ## Maximum Likelihood Hypothesis
 
