@@ -11,6 +11,7 @@
   - Output (lower-dim) space in $R^M$ with basis $u_1,...,u_M$
   - We project $x_n$ into output space, we obtain a $M$-dim vector $<u_1 x_n, ..., u_M x_n>$
 
+
 - Problem:
   - Choose the basis of the output space such that the variance of the projected vectors is maximised
 

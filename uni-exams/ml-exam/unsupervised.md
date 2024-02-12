@@ -2,7 +2,7 @@
 
 ## GMM
 
-## Definitions
+### Definitions
 
 Given and unsupervised dataset $D=\{x_n\}$
 
@@ -36,3 +36,20 @@ defined by these M principal components
   - The directions of the basis vectors are obtained by maximising the variance of the projected vector, obtaining that $\lambda_j=u_j^TSu_j$
 - Is M going to be equal to the number of intrinsic dimensions? Explain
   - Yes, M will be at least equal to 3, but the eigenvalues beyond that dimension probably will be zero, since there is no variance beyond translation and rotation in dataset
+
+## Dimensionality Reduction
+
+### What are latent variables and how do we use them
+
+- We are in a un unsupervised setting, in which the dataset is made of $\{x_n\}$ without labels
+- A way of describing the data when no labels are available is through GMM
+
+### Describe the architecture of autoencoder and its purpose
+
+- The purpose of an autoencoder is to represent data in a lower dimensional space while keeping relevant information
+- More specifically, autoencoders overcome the difficulties of PCA in projecting data into a nonlinear latent space
+- Let's suppose $x$ is our input
+- An autoencoder is made of two neural networks:
+  - Encoder: $x$ as input and $z$ as output, namely $x$ in the latent space
+  - Decoder: $z$ as input and $x$ (same as input of encoder) as output
+- $z$ is simply a vector
