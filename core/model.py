@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import os
 from matplotlib import pyplot as plt
 import torch
@@ -13,7 +14,8 @@ class Model(nn.Module, Parameters):
         super().__init__()
         self.save_parameters()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+    
+    @abstractmethod
     def forward(self, X):
         pass
     
@@ -41,12 +43,15 @@ class Classifier(Model):
         self.val_scores = []
         self.training_time = 0
         self.save_parameters() #saves as class fields the parameters of the constructor
-
+        
+    @abstractmethod
     def forward(self, X):
         pass
 
+    @abstractmethod
     def predict(self, X):
-        return torch.softmax(self(X), dim=-1).argmax(axis = -1).squeeze() #shape = (m)
+        pass
+        # return torch.softmax(self(X), dim=-1).argmax(axis = -1).squeeze() #shape = (m)
     
     def save(self):
         path = os.path.join("models",self.name)
@@ -78,17 +83,17 @@ class Classifier(Model):
         plt.xlabel('epoch')
         plt.show()
         
-    def evaluate(self,model,data,show=True):
+    def evaluate(self,data,show=True):
         with torch.no_grad():
-            predictions_test = model.predict(data.test_data.samples)
-            predictions_train = model.predict(data.train_data.samples)
-            predictions_val = model.predict(data.val_data.samples)
+            predictions_test = self.predict(data.test_data.samples)
+            predictions_train = self.predict(data.train_data.samples)
+            predictions_val = self.predict(data.val_data.samples)
         report_test = classification_report(data.test_data.labels, predictions_test, digits=3, output_dict=True)
         report_train = classification_report(data.train_data.labels, predictions_train, digits=3, output_dict=True)
         report_val = classification_report(data.val_data.labels, predictions_val, digits=3, output_dict=True)
         if show: 
             print(report_test)
             plot_confusion_matrix(data.test_data.labels, predictions_test, data.classes, normalize=True)
-        model.test_scores.append(report_test['weighted avg'][self.params['metrics']])
-        model.train_scores.append(report_train['weighted avg'][self.params['metrics']])
-        model.val_scores.append(report_val['weighted avg'][self.params['metrics']])
+        self.test_scores.append(report_test['weighted avg'][self.params['metrics']])
+        self.train_scores.append(report_train['weighted avg'][self.params['metrics']])
+        self.val_scores.append(report_val['weighted avg'][self.params['metrics']])
