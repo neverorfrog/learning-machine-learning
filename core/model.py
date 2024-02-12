@@ -44,6 +44,24 @@ class Classifier(Model):
         self.training_time = 0
         self.save_parameters() #saves as class fields the parameters of the constructor
         
+    def train_step(self,batch): #forward propagation
+        inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+        labels = batch[-1].type(torch.long)# labels -> shape = (m)
+        logits = self(inputs)
+        loss = self.loss_function(logits, labels)
+        return loss
+    
+    def eval_step(self,model,batch):
+        with torch.no_grad():
+            inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
+            labels = batch[-1].type(torch.long)# labels -> shape = (m)
+            logits = model(inputs)
+            loss = self.loss_function(logits, labels)
+            predictions = torch.tensor(logits.argmax(axis = 1).squeeze()).type(torch.long) # the most probable class is the one with highest probability
+            report = classification_report(batch[-1],predictions, output_dict=True)
+            score = report['weighted avg'][self.params['metrics']]
+        return loss, score
+        
     @abstractmethod
     def forward(self, X):
         pass

@@ -61,6 +61,9 @@ class CNN(Classifier):
         x = torch.flatten(x,start_dim=1)
         return self.fc(x)
     
+    def predict(self, X):
+        return torch.softmax(self(X), dim=-1).argmax(axis = -1).squeeze() #shape = (m)
+    
     
 class Ensemble(Classifier):
     def __init__(self, name, num_classes):

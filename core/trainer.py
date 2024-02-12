@@ -9,21 +9,6 @@ class Trainer():
     def __init__(self, params: dict):
         self.params = params
         
-    # def train_step(self,model,batch): #forward propagation
-    #     inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
-    #     labels = batch[-1].type(torch.long)# labels -> shape = (m)
-    #     logits = model(inputs)
-    #     loss = self.loss_function(logits, labels)
-    #     return loss
-    
-    # def eval_step(self,model,batch):
-    #     with torch.no_grad():
-    #         inputs = torch.tensor(*batch[:-1]) #one sample on each row -> X.shape = (m, d_in)
-    #         labels = batch[-1].type(torch.long) # labels -> shape = (m)
-    #         logits = model(inputs)
-    #         loss = self.loss_function(logits, labels)
-    #     return loss,0
-        
     def fit_epoch(self, epoch, model, optim, train_dataloader, val_dataloader):
         #Training
         model.train() 

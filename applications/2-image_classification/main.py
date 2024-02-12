@@ -1,23 +1,27 @@
 import sys
-sys.path.append('/home/flavio/code/main')
-
+sys.path.append('/home/flavio/code/machine-deep-learning')
 import warnings
-from trainer import *
-from models import *
-from datamodule import MyDataset
 warnings.filterwarnings("ignore")
-from core.plotting_utils import *
-from car_env import *
-from training_utils import *
+
+import time
+import torch
+import numpy as np
 import random
+from matplotlib import pyplot as plt
 torch.manual_seed(2000)
 np.random.seed(2000)
 random.seed(2000)
-import time
-from config import *
+
+from models import *
+from car_env import CarEnv
+from datamodule import MyDataset
+from core.trainer import Trainer
+from config import DATA_PARAMS, TRAIN_PARAMS
+# from core.plotting_utils import *
+# from training_utils import *
 
 car_env = CarEnv()
-dataset = MyDataset(load=False, params=DATA_PARAMS)
+dataset = MyDataset(load=True, params=DATA_PARAMS)
 dataset.summarize('train')
 
 names = []
@@ -33,7 +37,7 @@ train_model = True
 
 for name in names:
     model = CNN(name,num_classes=5)
-    trainer = ClassifierTrainer(params=TRAIN_PARAMS)
+    trainer = Trainer(params=TRAIN_PARAMS)
 
     start_time = time.time()
     if not train_model:
@@ -48,7 +52,7 @@ for name in names:
         plt.plot(model.val_scores, label=f'{name} - val scores')
     # car_env.play(model)
     trainer.evaluate(model, dataset)
-plt.legend()
-plt.ylabel('score')
-plt.xlabel('epoch')
-plt.show()
+# plt.legend()
+# plt.ylabel('score')
+# plt.xlabel('epoch')
+# plt.show()
