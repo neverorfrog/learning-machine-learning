@@ -82,6 +82,10 @@
 - But first, **how do we detected edges?**
   - Intuitively, by taking derivatives (because they are large at discontinuities)
 
+### Padding
+
+- TODO
+
 ### Edge detection with image gradients
 
 - Definition of image gradient?

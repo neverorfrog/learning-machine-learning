@@ -57,4 +57,10 @@
 
 ## HOG Descriptor
 
-- TODO
+- Goal is to describe image patches while being invariant to scale, rotation ecc
+- Steps
+  - Compute x and y gradient for each pixel
+  - Compute gradient histogram for each 8x8 cell
+    - We divide the orientation into bins, and for each orientation in the gradient of the patch, the magnitude is added to the corresponding bin
+    - Add the contributions of all pixels in the cell to create a 9-bin histogram
+  - Unite adjacent cells to form biggers cells and normalize to be robust to lighting variations
