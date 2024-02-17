@@ -15,47 +15,66 @@ How can we define a different kind of layer?
 
 ## Convolution (Discrete)
 
-- 1D Convolution
-  - A linear operation where two sequences of numbers output a third sequence
-  - Ingredients
-    - Input sequence x, kernel w, output sequence z
-    - Input and output of length m, kernel of length n
-  - $(x * w)_n[p] = \sum_i x_{p+i} \cdot w_{n-i}$
-    - The p-th element of the convolution is a dot product
-  - Intuitively, flipping the convolver *b* and sliding it from left to right along convolvee *a*
-
-- 2D Convolution
-  - What is the result? What are the inputs?
-  - What is the operation?
-
-- In any case, the same set of weights is used everywhere
-
-## Why are convolutions useful
+### Why?
 
 - Images (and other signal type data) have some properties that bias the learning process in some way
   - Translation invariance: an object remains the same if it is in different regions
   - Locality: an object must be recognized independently of what is around
 - Depending on the task there might be other properties that bias the learning process
 
+### What?
+
+- A linear operation where two arrays of numbers output a third one
+- Ingredients
+  - Input image x, kernel w, output image z
+  - Intuitively, flipping the convolver *w* and sliding it from left to right along convolvee *x*
+- Mathematical 2D Convolution
+  - $x[i,j]=\Sigma_{k,l} (w[k,l]x[i-k,j-l])$
+- **Stride** length is how much we shift the LRF from one unit to the other
+- **Padding** is a way of filling pixels beyond the border, such that we can convolve also at the border of the image
+
 ## Convolutional Layer
 
 - Input : image of dimension (c,w,h) = (channels, width, height)
 - Parameters : filters (learnable) usually much smaller than the image itself
-- Output : a 3D map of features of dimension (c,w,h) where c is the number of channels (features) we want to learn, while (w,h) is the dimension of the image after the convolution operation
+  - **Parameter sharing**: the same sets of weights is used everywhere
+    - This means every hidden unit detects the same feature in each local receptive field
+  - **Locality**: the kernel considers only local information, supposing the features are translation invariant
+    - Every hidden unit looks at a specific region of the data
+  - For example, in a 28x28 image, the kernel could be a 5x5 region
+- Output : a 3D map of features of dimension (c,w,h) where c is the number of channels or features maps(features) we want to learn, while (w,h) is the dimension of the image after the convolution operation
+- Operation: convolution + bias summation over the whole image with the same kernel
+- Learning proces: learn the kernel in order to extract features
 
-### Local receptive field
+## Pooling Layer
 
-- Every hidden unit looks at a specific region of the data
-- For example, in a 28x28 image, the LRF could be a 5x5 region
-- **Stride** length is how much we shift the LRF from one unit to the other
-- On each layer we iterate over alle the LRF
+- Note: ore we go forward in the network, more we are downsampling the image, which means the lrf becomes bigger relatively to the image
+- Why?:
+  - **Hierarchy of features**: early layers will learn lower level features, so we need to aggregate the features while we traverse the neural network
+  - The network becomes more sensitive to translation while we go forward
+- What?
+  - Kernel with no learnable parameters
+  - Typically outputs maximum or average value over lrf
+- In the end
+  - We downsample the image and thus combine information of adjacent pixels
+  - We want to combine low-level features to get higher-level features
 
-### Shared weights and biases
+## Batch Normalization Layer
 
-- The same set of wandb is associated to every LRF in the same layer
-- This means every hidden unit detects the same feature in each LRF
-- **Feature map** is what lies between the input layer and the hidden layer, the shared wandb are called **kernel**
-
-### Pooling
-
-- Layer after the convolutional to condense what comes out of it
+- Why?
+  - Standardized data (zero mean, unit variance) is more convenient for optimizers
+    - Based on standard practice to normalize data by doing $x'=\frac{x-\mu}{\sqrt\sigma^2}$
+  - To avoid big weight changes from one layer to another
+  - To introduce some sort of noise into the network
+- How?
+  - Basic steps
+    - We estimate mean and variance of data based only on the current minibatch
+    - Then we apply the formula above to individual layers by making it a layer itself
+    - Then we also apply scale and shift.
+  - In **test mode**
+    - Mean and variance are estimated using the whole dataset
+    - Becomes a linear operator
+  - In **convolutional layers** the mean and variance are computed for each channel
+- Consequences
+  - Noise injection (estimating mean and variance is noisy) acts as a sort of regularization
+  - Empirically found that it allows for higher learning rates and better convergence
