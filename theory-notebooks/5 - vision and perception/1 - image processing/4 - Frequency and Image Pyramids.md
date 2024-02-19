@@ -17,7 +17,7 @@
   - What is the Nyquist frequency?:
     - It is the maximum frequency that can be faithfully captured or represented in a digital signal sampled at a particular rate
     - In practice the half of the sampling frequency
-    - It means that if an image has $f_{max}$ as highest frequency, necessarily $f_s \geq f_{max}$
+    - It means that if an image has $f_{max}$ as highest frequency, necessarily $f_s \geq 2f_{max}$
   - Aliasing happens when the image is sampled at a too low frequency
   - To solve this, we could raise the sampling frequency (oversample) or smooth the image (downsample)
 - What are these image pyramids used for?
@@ -31,7 +31,7 @@
 - We reduce the resolution of the image progressively, by also smoothing it
   - That means reducing the frequency
 - We construct a pyramid made of multiple levels
-  - Each time we go a level down, the image is smoothed and the pixels are reduce
+  - Each time we go a level up, the image is smoothed and the pixels are reduce
   - That until we reach minimum resolution
   - So practically details get blurred out while we go up the pyramid
 

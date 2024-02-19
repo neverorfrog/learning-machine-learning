@@ -61,11 +61,3 @@
 
 - Filter values are sampled from a gaussian distribution
 - So weights fall off with distance from center
-
-#### Smoothing and sharpening
-
-- TODO
-
-## Non-linear filtering
-
-- TODO
