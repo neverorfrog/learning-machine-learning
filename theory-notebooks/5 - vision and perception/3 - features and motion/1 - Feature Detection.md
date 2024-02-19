@@ -21,12 +21,16 @@
       - We take the error function $E(u,v) = \Sigma_{x,y}w(x,y) [I(x+u,y+v)-I(x,y)]^2$ and approximate it at first order
       - So the locally the intensity change is a surface: corners correspond to holes, edges to archs
 - Steps:
-  - Compute x and y gradients of image and center and centering them through the mean
-  - Compute the covariance matrix M at each pixel (defined as? TODO) that gives a measure of the intensity change
+  - Compute the second order moment matrix $M$ (gives a measure of the intensity change) at each pixel
+    - Compute x and y gradients (convolving derivative of gaussian filter) of pixels
+    - Compute products of derivatives at every pixel
+    - Compute sum of products of derivatives (window function)
+  - Compute the eigenvalues $\lambda_1$ and $\lambda_2$ of $M$
+    - Axes of the ellipse that comes out if we put $E$ to a constant value
   - Compute the response to the detector by defining the threshold $R = \lambda_1 \lambda_2 - k(\lambda_1+\lambda_2)^2$
-    - $\lambda_1$ and $\lambda_2$ are the eigenvalues of $M$, which can be seen as the axes of the ellipse that comes out if we put $E$ to a constant value
     - For each pixel where $R >> 0$ there is a corner
-  - Where a corner is identified we do non-max suppression in the neighborhood
+  - Non-max suppression in the neighborhood of a potential corner
+    - Take only local maxima
 
 ## Scale-Invariant Detection
 

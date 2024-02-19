@@ -11,31 +11,7 @@
   - 3D reconstruction
   - Structure in motion
 
-## Antipasto: Lines in 3D
-
-- We can express a line in 3D as $l=p_0+d_0s_0$
-  - $p_0 \in \R^{3}$ is an offset
-  - $d_0 \in \R^{3}$ expresses a direction
-  - $s_0 \in \R$ is a scalar ascissa
-
-### Intersection Condition
-
-- Two lines intersect if
-  - Given direction $d_0 \times d_1$ orthogonal to both lines
-  - Given difference $p_0 - p_1$ between two points on the two lines
-  - It holds that $(p_0 - p_1) \cdot (d_0 \times d_1)=\bold 0$
-- Intuitively, if the projection of the difference vector between two points along the orthogonal direction to both lines is zero
-  - Which means the difference vector and the orthognal direction are aligned
-
-### Problem: computing closest point between two non-intersecting lines
-
-- Solution template: find the orthogonal direction to both lines and find the intersection of this orthogonal line to the two input lines
-- How?
-  - Definining a distance between two points $\Delta(s_0,s_1)$
-  - Minimizing the squared norm of $\Delta$
-  - Solution is the pseudo-inverse
-
-## Back to Epipolar Geometry: Ingredients
+## Ingredients
 
 - 1 3D point $X$
 - 2 Camera centers $C, C'$
@@ -71,26 +47,67 @@
 
 ## Wrapping up: Fundamental Matrix $F$
 
-- Epipolar constraint between $x$ and $x'$, namely that $x'$ must lie on $l'$
-- $l'=Fx$
-  - F is a 3x3 projective mapping, not invertible
-  - 7 dof because of rank 2
-- Since $x'$ lies on $l'$ we rewrite that $x^Tl'=0$
-  - Thus $x^TFx=0$
-- How is it obtained?
+- What?
+  - Algebraic representation of epipolar geometry
+  - 3x3 matrix with rank 2, not invertible, with 7 dof
+- Assumption
+  - **Epipolar constraint** between $x$ and its corresponding point $x'$, namely that $x'$ must lie on $l'$
+- Result
+  - There is a mapping from $x$ to $l'$ through F
 
-### Geometric Derivation
+### How do we get there?
 
-- $l'=e' \times x'$
+#### Geometrically (with epipolar lines $l,l'$)
+
+- $l'=e' \times x'=[e']_{\times}x'$
   - line through space expressed by the vector orthgonal to it
+  - $[e']_{\times}$ is skew-symmetric (rank 2)
 - $x' = H_{\pi} x$
   - Homography mapping through epipolar plane
-- $l'=e' \times H_{\pi} x = F x$
+- $l'=[e']_{\times} H_{\pi} x = F x$
+- Since $x'$ lies on $l'$, $x'^Tl'=0$, thus $\mathbf{x'^TFx=0}$
+- $F$ represents a mapping from a 2-dim onto a 1-dim projective space, and hence must have rank 2
 
-### Algebraic Derivation
+#### Algebraically (with projection matrices $P,P'$)
+
+- Here we also need an expression for $l'=e' \times x'$
+  - $e'=P'C$ is the projection of C onto second image plane
+  - $x'=P'X=P'P^+x$, since $x=PX$
+- In the end $l'=[e]_{\times}P'P^+x$, thus $F=[e]_{\times}P'P^+$
+
+## $F$ with some motions
+
+### Pure Translation
+
+- $P=K[I|0], P'=K[I|t]$
+- $F=[e']_{\times}$
+  - Only 2 dof
+- $x'=x+\frac{Kt}{Z}$
+
+### General Motion
 
 - TODO
 
-### 8-Point Algorithm
+## Projective ambiguity and canonical form
+
+- Problem: $F$ does not depend on the world frame
+  - statement 1: map from $P,P'$ to $F$ is not injective
+    - we cannot uniquely retrieve $P,P'$ from $F$
+  - statement 2: $F$ is invariant to a 3D projective transformation H
+    - $F$ from $P,P'$ and $F'$ from $PH,P'H$ are the same
+  - statement 3: if there are two couples $P,P'$ and $\tilde P,\tilde P'$, and $F$ relates to both couples, there exists a projective transformation H relating the two couples
+- Solution: canonical form and skew-symmetry to the resque
+  - statement 1: if $P=[I|0]$ and $P'=[M|m]$, then $F=[m]_{\times}M$
+  - statement 2: we can determine $F$ just from a pair $P,P'$ if $P'^TFP$ is skew-symmetric
+  - statement 3: we choose $P=[I|0]$ and $P'=[[e']_{\times}F|e']$
 
 ## Essential Matrix
+
+- What if the cameras are calibrated?
+- We can normalize points in the image plane. But how?
+  - $\hat x=K^{-1}x$
+- If $P=[I|0]$ and $P'=[R|t]$ are normalized camera projection matrices, then $F=[t]_{\times}R$
+- Relation between essential and fundamental?
+  - $\hat x'^TE\hat x=0$
+  - $x'^T K'^{-T}EK^{-1}x$
+  - Thus $F=K'^{-T}EK^{-1}$

@@ -29,16 +29,19 @@
 ### Gaussian Image Pyramid
 
 - We reduce the resolution of the image progressively, by also smoothing it
+  - That means reducing the frequency
 - We construct a pyramid made of multiple levels
   - Each time we go a level down, the image is smoothed and the pixels are reduce
   - That until we reach minimum resolution
-  - So practically details get blurred out while we go down the pyramid
+  - So practically details get blurred out while we go up the pyramid
 
 ### Laplacian Image Pyramid
 
 - In addition to smoothing and subsampling, between those two steps we retain the residuals and not the entire image itself
 - What are residuals?
   - Difference between the original and the processed image
+  - Difference of gaussians
+  - Approximates the Laplacian
 - This way the original image can be reconstructed from the pyramid
 
 ## Linear Filters in the Frequency Domain

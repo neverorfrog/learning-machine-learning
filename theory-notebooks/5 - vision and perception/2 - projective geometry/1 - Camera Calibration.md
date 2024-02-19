@@ -46,7 +46,7 @@
 - We rewrite the above equation such that $x_i$ and $y_i$ are known coefficients in vector $b\in \R^{2N}$ where $N$ is the number of points
 - We devise a linear system $Ap=b$ where for each point there are two linear equations in 11 unknowns $p$
   - $A\in \R^{2N\times 11}$, $p\in \R^{11}$
-- We solve linearly by minimizing energy error function $|Ap-b|$ with least squares
+- We solve linearly by minimizing energy error function $||Ap-b||^2$ with least squares
   - Depends heavily on invertibility of $A^TA$
 
 ### Linear Method 2
