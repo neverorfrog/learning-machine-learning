@@ -14,4 +14,5 @@
 
 ## PWCNet
 
-- Boh
+- Feature Pyramids
+- Cost volume for flow estimation
