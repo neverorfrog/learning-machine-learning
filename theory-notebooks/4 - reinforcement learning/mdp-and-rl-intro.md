@@ -30,9 +30,9 @@
 - We assume the MDP is finite and fully-observable
 - $S$ finite set of states (coordinates of the agent in a grid)
 - $A$ finite set of actions (directions in which the agent can go)
-- Defined as a tuple $<S,A,f,r>$
+- Defined as a tuple $S,A,f,r$
   - **Deterministic** MDP
-    - $ f: S \times A \rightarrow S $: transition function returns $S_{t+1} = f(S_t,A_t)$
+    - $f: S \times A \rightarrow S$: transition function returns $S_{t+1} = f(S_t,A_t)$
     - $r: s \times A \rightarrow \R$: reward function returns $r(S_t,A_t)$
   - **Non-Deterministic** MDP
     - $f: S \times A \rightarrow 2^{S} $: transition function return a set of possible alternatives, not just one state
@@ -61,7 +61,7 @@
   - We can also define it **recursively**: $G_t = R_{t+1} + \gamma G_{t+1}$
 - But this return can actually not be computed on the spot, so we define the **expected return**
   - This is because we have to consider all the possible returns over all possible evolutions from the current state
-  - $\mathbb{E}_\pi[G_t|S_t=s] = v_{\pi}(s) \rightarrow$ VALUE FUNCTION
-  - $\mathbb{E}_\pi[G_t|S_t=s,A_t=a] = q_{\pi}(s,a) \rightarrow$ ACTION-VALUE FUNCTION
-- In the end we need to find $\pi^* = \argmax_\pi v_{\pi}(s)$ $\forall s$
+  - $E_\pi[G_t|S_t=s] = v_{\pi}(s) \rightarrow$ VALUE FUNCTION
+  - $E_\pi[G_t|S_t=s,A_t=a] = q_{\pi}(s,a) \rightarrow$ ACTION-VALUE FUNCTION
+- In the end we need to find $\pi^* = argmax_\pi v_{\pi}(s)$ $\forall s$
 - How? In the next chapters
