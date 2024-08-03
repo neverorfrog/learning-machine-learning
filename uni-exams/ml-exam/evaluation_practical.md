@@ -29,5 +29,6 @@
   - Precision, recall, F1-score and confusion matrix
   - Recall is defined as the ability avoid false negatives
     - $R=\frac{TP}{FN+TP}$
+    - Low recall $\righarrow$ many false negatives
   - Precision is the ability to avoid false positives
     - $P = \frac{TP}{FP+TP}$
