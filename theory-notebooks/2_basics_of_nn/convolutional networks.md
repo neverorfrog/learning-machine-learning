@@ -1,0 +1,93 @@
+# Convolutional Neural Networks
+
+## Why Multilayer Perceptrons are bad for images (or audio)
+
+- Dimensionality
+  - Images can be very big and this would cause an explosion of the number of parameters
+- Training
+  - Local minima
+  - Exploding and vanishing gradients due to dense layers
+
+How can we define a different kind of layer?
+
+- We need to exploit spatial information (nearby pixels are probably related)
+- Fully connected layers flatten the image, losing ordering of pixels
+
+## What properties can we capture in images, audios or in general more structured data ?
+
+- Self-similarty: a [patch](misc_definitions.md#patch) contains pixels similar to each other. Maybe we could share the weights?
+- Locality: an object must be recognized independently of what is around
+- Translational Invariance: the representation of an object is independent of where it is
+- Deformation Invariance: to some extent the representation of an object is independent of how much it is deformed
+
+These properties bias the learning process 
+
+## Convolution (Discrete)
+
+- Exploits the fact the far pixels don't have influence
+- Thus, we develop a local layer that acts only on the patch
+- Local layer: $[f(X)]_{ij} = f(P_k(i,j))$
+  - $X$ is the image
+  - $P_k(i,j)$ is the patch
+- We can express the convolution as the multiplication of a matrix *C(w)* by the input. Turns out this matrix is circulant
+  - It is [SHIFT EQUIVARIANT](misc_definitions.md#equivariance)
+  - And also commutative wrt multiplication with another circulant matrix
+
+### How?
+
+- A linear operation where two arrays of numbers output a third one
+- Ingredients
+  - Input image x, kernel w, output image z
+  - Intuitively, flipping the convolver *w* and sliding it from left to right along convolvee *x*
+- Mathematical 2D Convolution
+  - $x[i,j]=\Sigma_{k,l} (w[k,l]x[i-k,j-l])$
+- **Stride** length is how much we shift the LRF from one unit to the other
+- **Padding** is a way of filling pixels beyond the border, such that we can convolve also at the border of the image
+
+## Receptive Field
+
+- Subset of an input X that contributed to the output of a convolutional model
+- For a single layer, the receptive field is a patch $P_k(i,j)$
+
+## Convolutional Layer
+
+- Input : image of dimension $(c,h,w)$ = (channels, height, width)
+- Parameters : filters (learnable) usually much smaller than the image itself
+  - $W \sim (c',ssc)$
+- Output : a 3D map of features of dimension $(c',h',w')$ where 
+  - $c'$ is the embedding size (number of features maps we want to learn)
+  - $(h',w')$ is the dimension of the image after the convolution operation
+- Operation: convolution + bias summation over the whole image with the same kernel
+- Learning proces: learn the kernel in order to extract features
+
+### Properties
+
+- **Locality**: the kernel considers only local information, supposing the features are translation invariant
+  - Every hidden unit looks at a specific region of the data
+  - For example, in a 28x28 image, the kernel could be a 5x5 region
+- Translation equivariance: an object remains the same if it is in different regions
+    - $P_k(i,j) = P_k(i',j') \implies f(P_k(i,j)) = f(P_k(i',j'))$
+- **Parameter sharing**: the same sets of weights is used everywhere
+  - This means every hidden unit detects the same feature in each local receptive field
+  - **Why?**: to achieve translation equivariance
+- **Mathematically**:
+  - TODO
+
+## Pooling Layer
+
+- Note: more we go forward in the network, more we are downsampling the image, which means the lrf becomes bigger relatively to the image
+- Why?:
+  - **Hierarchy of features**: early layers will learn lower level features, so we need to aggregate the features while we traverse the neural network
+  - The network becomes more sensitive to translation while we go forward
+- What?
+  - Kernel with no learnable parameters
+  - Typically outputs maximum or average value over lrf
+- How?
+  - $MaxPool(X)_{ij}=Max([X]_{P_2(ij)})$
+- In the end
+  - We downsample the image and thus combine information of adjacent pixels
+  - We want to combine low-level features to get higher-level features
+
+## Causal Convolution
+
+

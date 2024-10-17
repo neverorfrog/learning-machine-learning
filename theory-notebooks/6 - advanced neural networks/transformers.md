@@ -10,6 +10,15 @@
   - A convolutional layer would compute $h_i=\Sigma_j w_j x_{i+j}$
     - $j=-k...k$ with $k$ fixed
 
+## What is an embedding?
+
+- Representation of high-dimension categorical data into a smaller continuous vector space
+- Usually it is a dense representation of a data distribution
+- Two reasons:
+  - Capture semantic relationships
+  - Reduce computational complexity
+
+
 ## Self-Attention
 
 - A self-attention layer computes a scalar weight with **attention scoring function** $\alpha(x_i,x_j)$
