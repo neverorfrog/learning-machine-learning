@@ -1,11 +1,39 @@
 # Recurrent Neural Networks
 
-- Why?
-  - Focused on learning on sequential data
-  - Handle temporal constraints on the input
-  - Handle variable-length data
-  - Sequences are made of elements that cannot be considered statistically independent from one another
-    - With images, sampling one image or another from the dataset distribution does not change anything
+- What?
+  - Networks that learn on [time series](definitions.md/#time-series)
+- Context: Autoregressive Modeling
+  - We want to efficiently learn $p(x_t|x_{t-1}, x_{t-2},...)$
+    - Elements of a sequence are not iid
+    - We want to infer the underlying data distribution
+  - We don't need the entire sequence to predict the next sample
+    - If we take just the previous sample/token, we talk about Markov Models
 - How?
-  - Maintains an internal state with information about the past
-  - Basically adds the contribution of the past weights with the corresponding weights
+  - [LATENT](definitions.md/#latent-variable) variables
+    - Internal state $h_t$ with information about the past
+  - Recurrent edge: sends the output back as an input
+- Where are they used?
+  - [Forecasting](definitions.md/#forecasting)
+  - Clustering and classification
+  - Language modeling
+
+## Hidden State
+
+- Summarizes past information
+- In general computed using the past hidden state: $h_t = f(x_t, h_{t-1})$
+
+## How do you compute the loss?
+
+- You compute the loss at each timestep t and sum each of these losses
+- The backpropagation 
+
+## Forward
+
+$H_t = \phi(W_h \cdot H_{t-1} + W_x \cdot X_t + b)$
+- $W_x$ is used to transform the input vector at each timestep into the hidden state space
+- $W_h$ is used to carry into the current hidden state the previous hidden state
+
+## Numerical Instability
+
+- Since sequences can be long, gradient clipping must be used to prevent gradient exploding or vanishing
+
