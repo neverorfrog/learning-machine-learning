@@ -1,0 +1,4 @@
+- [ ] Universal Approximation Theorem
+- [ ] Backpropagation Formula
+- [ ] Convolution Formula
+- [ ] Details on regularization

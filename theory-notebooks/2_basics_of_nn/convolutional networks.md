@@ -1,26 +1,28 @@
 # Convolutional Neural Networks
 
-## Why Multilayer Perceptrons are bad for images (or audio)
+### Phases of a convolutional neural network:
+  - Feature extraction (encoding of the image)
+  - Classification (decoding of the class by fully connected layers)
 
+### Why using just Multilayer Perceptrons is bad for images (or audio)
 - Dimensionality
   - Images can be very big and this would cause an explosion of the number of parameters
 - Training
   - Local minima
   - Exploding and vanishing gradients due to dense layers
 
-How can we define a different kind of layer?
-
+### How can we define a different kind of layer?
 - We need to exploit spatial information (nearby pixels are probably related)
 - Fully connected layers flatten the image, losing ordering of pixels
 
-## What properties can we capture in images, audios or in general more structured data ?
+### What properties can we capture in images and audios?
 
 - Self-similarty: a [patch](misc_definitions.md#patch) contains pixels similar to each other. Maybe we could share the weights?
 - Locality: an object must be recognized independently of what is around
 - Translational Invariance: the representation of an object is independent of where it is
 - Deformation Invariance: to some extent the representation of an object is independent of how much it is deformed
 
-These properties bias the learning process 
+**These properties bias the learning process**
 
 ## Convolution (Discrete)
 
@@ -29,7 +31,7 @@ These properties bias the learning process
 - Local layer: $[f(X)]_{ij} = f(P_k(i,j))$
   - $X$ is the image
   - $P_k(i,j)$ is the patch
-- We can express the convolution as the multiplication of a matrix *C(w)* by the input. Turns out this matrix is circulant
+- Also expressed as multiplication of a matrix *C(w)* by the input. Turns out this matrix is circulant
   - It is [SHIFT EQUIVARIANT](misc_definitions.md#equivariance)
   - And also commutative wrt multiplication with another circulant matrix
 
@@ -44,7 +46,7 @@ These properties bias the learning process
 - **Stride** length is how much we shift the LRF from one unit to the other
 - **Padding** is a way of filling pixels beyond the border, such that we can convolve also at the border of the image
 
-## Receptive Field
+### Receptive Field
 
 - Subset of an input X that contributed to the output of a convolutional model
 - For a single layer, the receptive field is a patch $P_k(i,j)$
@@ -72,22 +74,44 @@ These properties bias the learning process
   - **Why?**: to achieve translation equivariance
 - **Mathematically**:
   - TODO
+- **How many parameters**?:
+  - TODO
 
-## Pooling Layer
+## Other useful operations in CNNs
 
-- Note: more we go forward in the network, more we are downsampling the image, which means the lrf becomes bigger relatively to the image
+### Downsampling (Pooling Layer)
+
+- More we go forward in the network, more we are downsampling the image
+  - lrf becomes bigger relatively to the image
+  - scaling down representation size
 - Why?:
   - **Hierarchy of features**: early layers will learn lower level features, so we need to aggregate the features while we traverse the neural network
   - The network becomes more sensitive to translation while we go forward
+  - We are squeezing information out and distilling it from noise
 - What?
   - Kernel with no learnable parameters
   - Typically outputs maximum or average value over lrf
-- How?
-  - $MaxPool(X)_{ij}=Max([X]_{P_2(ij)})$
 - In the end
   - We downsample the image and thus combine information of adjacent pixels
   - We want to combine low-level features to get higher-level features
 
-## Causal Convolution
+### Upsampling
 
+- Why?
+  - Image reconstruction (usable for segmentation)
+- How?
+  - Static
+  - Zeros
+  - Bilinear Interpolation
+  - Transposed convolution
+    - In normal convolution an output activation is the weighted sum of $K^d$
+      (where $d$ is the dimension of the data sample) input units (pixels)
+    - Transposed convolution is dual: one input unit generates $K^d$ output
+      activations 
 
+### Changing the number of channels
+
+- Why?
+  - TODO
+- How?
+  - 1x1 convolution
