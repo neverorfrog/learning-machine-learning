@@ -23,3 +23,5 @@ Process that transforms data from a non-metric space (images, audios etc...) to 
 
 - Result of an embedding process
 - Typically higher-dimensional vectors when we are extracting features from raw data
+- In theory a space where the actual data distribution lives
+- We learn the geometry of the sample space
