@@ -1,2 +1,0 @@
-- [ ] Formule backpropagation e autodiff 
-- [ ] Formule loss functions

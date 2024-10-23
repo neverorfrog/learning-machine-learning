@@ -17,23 +17,36 @@
   - Clustering and classification
   - Language modeling
 
-## Hidden State
+## Main Characteristics 
+
+### Hidden State
 
 - Summarizes past information
 - In general computed using the past hidden state: $h_t = f(x_t, h_{t-1})$
 
-## How do you compute the loss?
+### How do you compute the loss?
 
 - You compute the loss at each timestep t and sum each of these losses
-- The backpropagation 
+- The backpropagation happens through time
 
-## Forward
+### Forward
 
 $H_t = \phi(W_h \cdot H_{t-1} + W_x \cdot X_t + b)$
 - $W_x$ is used to transform the input vector at each timestep into the hidden state space
 - $W_h$ is used to carry into the current hidden state the previous hidden state
 
-## Numerical Instability
+### Numerical Instability
 
 - Since sequences can be long, gradient clipping must be used to prevent gradient exploding or vanishing
+
+## Some task categories
+
+### Seq2Seq
+
+- We can have a sequence of arbitrary length in input and of arbitrary length in output
+- A general architecture for these kind of tasks is the ENCODER-DECODER
+  - The encoder brings the input (at time t-1) in a specified embedding and also the hidden state at time t
+  - The decoder computes the output relative to the specific task
+
+#### Autoregressive Models (Important type of Seq2Seq)
 

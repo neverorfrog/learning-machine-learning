@@ -1,8 +1,8 @@
 import torch
 import numpy as np
-from core.utils import Parameters
+from src.utils import Parameters
 from sklearn.metrics import classification_report
-from core.plotting_utils import plot_confusion_matrix
+from src.plotting_utils import plot_confusion_matrix
 
 class Trainer():
     """The base class for training models with data"""   

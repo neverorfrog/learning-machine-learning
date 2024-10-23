@@ -1,7 +1,7 @@
 import random
 import torch
-from core.plotting_utils import show_images
-from core.utils import *
+from src.plotting_utils import show_images
+from src.utils import *
 import torchvision
 import pandas as pd
 from sklearn import datasets
@@ -123,8 +123,53 @@ class ClassificationDataset(Dataset):
             ratio = (total / float(len(data.labels))) * 100
             print(f' - Class {str(c)}: {total} ({ratio})')
             
-    
-    
+class TorchDataset(ClassificationDataset):
+    def get_dataloader(self, train):
+        data = self.train_data if train else self.test_data
+        batch_size = self.batch_size if train else len(self.val_data)
+        return torch.utils.data.DataLoader(data, batch_size, shuffle=train, num_workers=self.num_workers)
+        
+    def visualize(self, batch, nrows=1, ncols=8, labels=[]):
+        X, y = batch
+        if not labels:
+            labels = self.text_labels(y)
+        show_images(X.squeeze(1), nrows, ncols, titles=labels)
+        
+    def val_split(self, train_data):
+        train_size = int(len(train_data) * 0.85)
+        val_size = int(len(train_data) - train_size)
+        train_data, val_data = torch.utils.data.random_split(train_data, [train_size, val_size])
+        return train_data, val_data        
+        
+    def text_labels(self, indices):
+        """Return text labels"""
+        return [self.labels[int(i)] for i in indices]
+        
+class MNIST(TorchDataset):
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        train_data = torchvision.datasets.MNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.train_data, self.val_data = self.val_split(train_data)
+        self.test_data = torchvision.datasets.MNIST(
+            root=self.root, train=False, transform=trans, download=True)
+        self.labels = [0,1,2,3,4,5,6,7,8,9]
+
+class FashionMNIST(TorchDataset):
+    """The Fashion-MNIST dataset"""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.train_data = torchvision.datasets.FashionMNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.test_data = torchvision.datasets.FashionMNIST(
+            root=self.root, train=False, transform=trans, download=True)
+        self.labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
+                       'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+        
+        
 # class VisualDataset(DataModule):
 #     def __init__(self, batch_size = 64):
 #         super().__init__()
@@ -143,53 +188,7 @@ class ClassificationDataset(Dataset):
 #         dataset = torch.utils.data.TensorDataset(*data)
 #         return torch.utils.data.DataLoader(dataset, self.batch_size, shuffle=train)
 
-# class TorchDataset(DataModule):
-#     def get_dataloader(self, train):
-#         data = self.train_data if train else self.test_data
-#         batch_size = self.batch_size if train else len(self.val_data)
-#         return torch.utils.data.DataLoader(data, batch_size, shuffle=train, num_workers=self.num_workers)
-        
-#     def visualize(self, batch, nrows=1, ncols=8, labels=[]):
-#         X, y = batch
-#         if not labels:
-#             labels = self.text_labels(y)
-#         show_images(X.squeeze(1), nrows, ncols, titles=labels)
-        
-#     def val_split(self, train_data):
-#         train_size = int(len(train_data) * 0.85)
-#         val_size = int(len(train_data) - train_size)
-#         train_data, val_data = torch.utils.data.random_split(train_data, [train_size, val_size])
-#         return train_data, val_data        
-        
-#     def text_labels(self, indices):
-#         """Return text labels"""
-#         return [self.labels[int(i)] for i in indices]
-        
-# class MNIST(TorchDataset):
-#     def __init__(self, batch_size=64, resize=(28, 28)):
-#         super().__init__()
-#         self.save_hyperparameters()
-#         trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
-#         train_data = torchvision.datasets.MNIST(
-#             root=self.root, train=True, transform=trans, download=True)
-#         self.train_data, self.val_data = self.val_split(train_data)
-#         self.test_data = torchvision.datasets.MNIST(
-#             root=self.root, train=False, transform=trans, download=True)
-#         self.labels = [0,1,2,3,4,5,6,7,8,9]
 
-# class FashionMNIST(TorchDataset):
-#     """The Fashion-MNIST dataset"""
-#     def __init__(self, batch_size=64, resize=(28, 28)):
-#         super().__init__()
-#         self.save_hyperparameters()
-#         trans = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
-#         self.train_data = torchvision.datasets.FashionMNIST(
-#             root=self.root, train=True, transform=trans, download=True)
-#         self.test_data = torchvision.datasets.FashionMNIST(
-#             root=self.root, train=False, transform=trans, download=True)
-#         self.labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
-#                        'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
-        
 # class CSVDataset(DataModule):
 #     def __init__(self, path = None, num_train = None, num_test = None, batch_size = None, features = None, class2Int = True):
 #         super().__init__()

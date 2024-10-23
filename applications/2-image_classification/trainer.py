@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/home/flavio/code/main')
 
-from core.trainer import ClassifierTrainer
+from src.trainer import ClassifierTrainer
 from datamodule import Dataset, MyDataset
 from models import Ensemble
 from training_utils import *

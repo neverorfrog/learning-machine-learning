@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.init as init
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from config import MODEL_PARAMS as params
-from core.model import Classifier
+from src.model import Classifier
 
 class CNN(Classifier):
     def __init__(self, name, num_classes, bias=True):

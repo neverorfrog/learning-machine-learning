@@ -1,3 +1,4 @@
+Cose da riptere
 - [ ] Universal Approximation Theorem
 - [ ] Backpropagation Formula
 - [ ] Convolution Formula

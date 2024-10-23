@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/home/flavio/code/main')
 
-from core.datamodule import ClassificationDataset, Dataset
+from src.datamodule import ClassificationDataset, Dataset
 import numpy as np
 import torch
 import os

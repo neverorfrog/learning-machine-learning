@@ -15,7 +15,7 @@ random.seed(2000)
 from models import *
 from car_env import CarEnv
 from datamodule import MyDataset
-from core.trainer import Trainer
+from src.trainer import Trainer
 from config import DATA_PARAMS, TRAIN_PARAMS
 # from core.plotting_utils import *
 # from training_utils import *

@@ -3,9 +3,9 @@ import os
 from matplotlib import pyplot as plt
 import torch
 from torch import nn
-from core.utils import Parameters
-from core.trainer import *
-from core.utils import *
+from src.utils import Parameters
+from src.trainer import *
+from src.utils import *
 
 
 class Model(nn.Module, Parameters):
