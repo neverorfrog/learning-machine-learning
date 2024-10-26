@@ -64,42 +64,35 @@
 - So that diverse objects have very different representations
 - Zebra and horse could share something
 
-## How do we measure performance?
+## SimCLR (Similarity Contrastive Learning Representation)
 
-- Classification layer (as simple as possible) on intermediate feature layer
-- Proxy tasks can be a good indicator of downstream tasks
-
-## Some actual SSL pipelines
-
-### SimCLR (Similarity Contrastive Learning Representation)
-
-#### General Idea
+### General Idea
 
 - Contrastive Learning with classical siamese networks approach
 
-#### Structure
+### Structure
 - N images of a batch are fed into two same transformations each
 - Each couple of transformed image is fed into a branch of two Resnets
 - The latent representation is embedded (projected) by two MLPs
 
-#### How is the loss computed?
+### How is the loss computed?
 
 - Every pair of augmented projected image is fed into a similarity function
   - Two views of the same image are considered as positive pairs
 - These similarities are fed into a softmax function
 - The cross entropy loss tries to maximise the similarity between two views of the same image
 
-#### Drawbacks
+### Drawbacks
 
 - We need to do hard negative mining
 
-### BYOL (Bootstrap your own latent)
+## BYOL (Bootstrap your own latent)
 
-#### General Idea
+### General Idea
 - Removes the need for hard negatvie mining
 - Does not use a classical contrastive learning appraoch
 
-#### Structure
+### Structure
 - Two branches (one online network and one target network)
 - Two branches have different weights
 - Loss is computed between the two branches
@@ -107,23 +100,43 @@
 - Target network weights are upate by polyak averaging
   - Contains the whole history thanks to the moving average
 
-#### What is the loss?
+### What is the loss?
 - Cosine similarity between the two network outputs
 
-#### Why can't we use this with siamese networks?
+### Why can't we use this with siamese networks?
 - Since we do polyak averaging, the loss between the two networks is never zero
   - Thus, we don't need hard negatives
   - Negatives are enforced by the batch normalization layer in the online network
 - Instead, with siamese networks everything would be positive
 
-### Barlow Twins
+## Barlow Twins
 
-#### General Idea
+### General Idea
 - Builds two distorted versions of the same objective
 - These version have to be similar
 - This similarity is captured by a **cross-correlation matrix**
-  - This needs to be near to the identity matrix
 
-#### Structure
+### What is a Cross-Correlation Matrix
+- It is done between two vectors (embeddings)
+- We simply multiply them together
+- It represents how each couple of dimensions correlate to each other
+  - Correlate means that they have same probability distribution (?)
+
+### Structure
 - Two encoders for one image that apply a distortion
-- Then the embeddings 
+- These distorted images are embedded
+- The embeddings are cross-correlated
+
+### How is the loss computed?
+- The goal is to make the cross-correlation matrix as near as possible to the identity matrix
+- So, the loss computes the distance from the ccm to the identity matrix
+- The important element is the **redundancy reduction term**
+  - Off-diagonal elements are forced to tend to zero
+  - $\lambda$ is a weight (hyperparameter)
+
+
+## How do we measure performance in SSL?
+
+- Classification layer (as simple as possible) on the features
+- Downstream tasks transfer learning
+  - Proxy tasks can be a good indicator of downstream tasks

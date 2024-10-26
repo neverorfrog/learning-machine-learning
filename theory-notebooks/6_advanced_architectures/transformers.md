@@ -1,5 +1,7 @@
 # Transformers
 
+## Intro
+
 - Why?
   - CNNs are not able to grasp features in data where:
     - Locality does not hold anymore
@@ -64,5 +66,3 @@
   - Phase 1: token mixing with multi-head attention layer and layer normalization
   - Phase 2: per-token update (just like a 1x1 convolution) which acts as feature extractor for each token
 - Between one phase and another the output is always a matrix $N \times d$ where $d$ has to always remain the same because of the residual connections
-
-TODO FINISH TRANSFORMERS SCARDAPANE

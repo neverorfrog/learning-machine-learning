@@ -48,5 +48,26 @@ $H_t = \phi(W_h \cdot H_{t-1} + W_x \cdot X_t + b)$
   - The encoder brings the input (at time t-1) in a specified embedding and also the hidden state at time t
   - The decoder computes the output relative to the specific task
 
-#### Autoregressive Models (Important type of Seq2Seq)
+### Autoregressive Models (Important type of Seq2Seq)
+
+- What does the encoder do?
+  - Encodes input sequence into a useful representation (context vector)
+  - Creates a hidden state
+- What does the decoder do?
+  - At time $t$ the decoder takes as input:
+    - The hidden state at time $t$
+    - The generated output at time $t-1$
+- What about the loss?
+  - Tracked for future timesteps
+
+#### What about early stages of training when predictions are inaccurate? $\rightarrow$ TEACHER FORCING
+
+- The decoder is fed with the ground truth (instead of the generated output)
+
+#### How do i start the generation?
+- From BOS token to EOS token 
+
+
+
+
 
