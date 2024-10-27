@@ -9,33 +9,35 @@
   - Identity of the word in a lookup-table fashion
   - Position of the word inside the sentence
 
-## How could the context of a word be inferred?
+## Attention
+
+### How could the context of a word be inferred?
   - A word could ask what words are next to it
   - Adjectives could refine the context of the nouns next to them
 
-### How does a noun search for adjectives?
+#### How does a noun search for adjectives?
   - With the query weight matrix $W_Q$
   - $W_Q$ is multiplied to the embedding of each token
   - The result is a vector $Q$ for each token
   - This vector is in the Query/Key space
   - It encompasses a QUERY for other tokens
 
-## What tokens are searched by the Query?
+### What tokens are searched by the Query?
   - The tokens search for keys $k$
   - $K$ result from multiplying $W_K$ by the embeddings
 
-## How are $K$ and $Q$ combined?
+### How are $K$ and $Q$ combined?
   - They go into an attention function (similarity function)
     - It is a sort of dot product
   - The higher the similarity, the more $K$ **attends** to $Q$
   - Attending to means that $K$ updates the meaning of $Q$
 
-## How are these similarity values used?
+### How are these similarity values used?
   - We normalize the values through softmax
   - The result is an **attention pattern**
     - Grid of normalized attentions
 
-### What if i wanna make the forecasting causal?
+#### What if i wanna make the forecasting causal?
   - The prediction of the next token depends only on past tokens
   - Every $Q$ is multiplied only bey preceding $K$
   - The attention pattern becomes an upper triangular matrix
