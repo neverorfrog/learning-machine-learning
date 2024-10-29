@@ -31,8 +31,6 @@
 - With a softmax-normalized scoring function
 - The higher the alignment between decoder hidden state at time $t-1$ and encoder hidden state at time $t$, the higher the score
 
-![Transformers Architecture](images/transformer.png)
-
 ## What is an embedding?
 - Representation of high-dimension categorical data into a smaller continuous vector space
 - Usually it is a dense representation of a data distribution
@@ -65,14 +63,12 @@
   - Parameters depend only on embedding dimension and on size of $k,v,q$
   - $v$ determines the output shape
   - Operator is permutation invariant, so the order of tokens does not matter
-- Parallelism to dictionary
-  - Python structure made of tuples of keys and values
-  - We can query the dictionary searching for a key
-  - The self-attention operator is a "soft" dictionary that outputs values based on the similarity between a key and a query
-  - It's called self because keys, queries and values all come from the same token
+![img](images/attention_matrix_computation.png)
 - What if we have $n$ embeddings?
   - The output is a generic $H \in \R^{n \times d}$ matrix
   - $d$ is the embedding dimension
+
+![layer](images/self_attention_layer.png)
 
 ## Multi-head attention
 
@@ -90,16 +86,29 @@
   - Output size $o$
   - Number of heads $h$
 
-## Wrapping up: the transformer block
+## Transformer Layer
+
+![img](images/transformer_layer.png)
+
+## Transformer Block
+
+![Transformers Architecture](images/transformer.png)
 
 ### Transformer for forecasting (just the encoder)
 - Two phases
   - Phase 1: token mixing with multi-head attention layer and layer normalization
   - Phase 2: per-token update (just like a 1x1 convolution) which acts as feature extractor for each token
 - Between one phase and another the output is always a matrix $N \times d$ where $d$ has to always remain the same because of the residual connections
+- Also positional encodings are need
+  - Can be fixed or learned
 
 ### Transformer for machine translation (the original one)
 - Encoder encodes
 - Decoder decodes
 - Softmax on top of the decoder
 - No surprises
+
+### What is cross-attention?
+- Still attention with the same principle
+- Keys and values are computed from the decoder embeddings
+- For translation tasks, the encoder contains information about the source language statistics, and the decoder contains information about the target language statistics.

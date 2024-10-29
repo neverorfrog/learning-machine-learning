@@ -5,7 +5,6 @@
   - Suppose the model $L_s$ is trained and works
   - We also have a target task_ $T_t$ with a different dataset, model and function to learn (eg different image format and distribution, different classes)
   - The goal of transfer learning is to use the learned model $L_s$ for $T_r$, so to reduce computational effort of possibly re-learning stuff we potentially already know from $T_s$
-- Can be done in two ways
 
 ## Fine-Tuning
 
