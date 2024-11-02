@@ -53,10 +53,20 @@
   - **Post-Training Quantization**
   - **Quantization Aware Training**
 
-### Quantization Aware Training
+### Quantization Scheme
 - Usage of floating point during training but integer only during inference
 - Main goal:
   - Find a mapping from real domain to quantized domain
+  - $r$ is real number and $q$ is quantized number
+  - $r = S(q-Z)$ where $S$ is scale and $Q$ is the zero-point (center of the distribution of the quantized values)
+    - $S$ and $Q$ are parameters to be found
+
+### How do you do inference on a quantized model?
+- You apply quantization formula on inputs and weights
+- You transform products into shift operations
+
+### How do you train a quantized model?
+
 
 
 
