@@ -52,7 +52,7 @@ $V_2=\mathbb{E}_{z \sim q(z)}[log(1-D(G(z)))]$
 - Generator wants to minimize this
   - It wants the discriminator to recognize generated images as real
 
-#### Whi is this not a likelihood?
+#### Why is this not a likelihood?
 - There are two targets
 - We actually have two expectations (two value functions)
 
@@ -69,6 +69,7 @@ $V_2=\mathbb{E}_{z \sim q(z)}[log(1-D(G(z)))]$
 ### What is the Wasserstein distance?
 - It measures the distance between two probability distributions
   - Distance is measured in terms of probability mass needed to be moved from one distribution to the other
+- The discriminator now is trained to learn a K-Lipschitz continuous function to help compute Wasserstein distance
 - In continuous domain, it is expressed as the minimum (over all the
   possible joint probability distributions) expected distance between two samples
   - $W(p_r, p_g) = \min_{\gamma \sim \prod(p_r,p_g)} \mathbb{E}_{(x,y) \sim \gamma}[||x-y||]$
