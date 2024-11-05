@@ -17,7 +17,7 @@
 
 ### What properties can we capture in images and audios?
 
-- Self-similarty: a [patch](misc_definitions.md#patch) contains pixels similar to each other. Maybe we could share the weights?
+- Self-similarty: patterns are repeated across [patches](misc_definitions.md#patch)  Maybe we could share the weights?
 - Locality: an object must be recognized independently of what is around
 - Translational Invariance: the representation of an object is independent of where it is
 - Deformation Invariance: to some extent the representation of an object is independent of how much it is deformed
@@ -115,3 +115,33 @@
   - TODO
 - How?
   - 1x1 convolution
+
+
+## Famous CNN Architectures
+
+## LeNet
+
+- Most basic one
+- Just convolutional, pooling and sigmoid
+
+## AlexNet
+
+- Exploits the concept of hierarchical features
+- Exploits deeper architecture
+- Introduces normalization layers
+- Uses relu instead of sigmoid
+
+## VGGNet
+
+- Modular architecture
+- Found that deep and narrow outperforms shallow and wide
+- One module is made of
+  - 3x3 kernel with padding 1
+  - relu activation
+  - 2x2 pooling kernel
+- Exploited parallel GPUs
+
+## GoogLeNet
+
+- Uses inception blocks (parallel convolutions)
+- Avoids fully connected layers

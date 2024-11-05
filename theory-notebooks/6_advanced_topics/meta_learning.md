@@ -37,7 +37,7 @@
 - Mimicks knn learning
 - We use support set as the training data
   - I just care about who is near me in the support set
-- $P_\theta(y|x,S)=\sum_{(x_i,y_i)\in S} k_\theta(x_i,y_i)y_i$
+- $P_\theta(y|x,S)=\sum_{(x_i,y_i)\in S} k_\theta(x,x_i)y_i$
   - We compute the probability of the sample being of that class by
     weighing the probability of the neighbors beign of that class, weighted
     by the distance

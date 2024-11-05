@@ -101,9 +101,16 @@
 
 ## What is the Graph Convolution Framework?
 - Patch Functions
+  - Define for each node how to aggregate the neighborhood
+  - Matrix of size |V| x |V|
 - Convolution Filter Weights
+  - Apply the filters
+  - Computes a score for each node to be passed to next layer
 - Merging Functions
+  - Merges results of multiple filtering results
 
 ## Spectral Graph Convolutional Network
+- We basically learn the convolution filters in the spectral domain of the normalized laplacian
+- Patch function can be expressed in terms of eigenvectors of the laplacian
 
 
